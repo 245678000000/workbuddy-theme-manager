@@ -9,7 +9,7 @@ const MOCK_SKINS: Skin[] = [
     manifest: {
       id: 'jingtian-starlight',
       name: '景甜 · STARLIGHT 星蝶光廊',
-      version: '1.2.0',
+      version: '1.0.0',
       author: 'Wangnov',
       description: '偶像星蝶浅色陪伴主题：浅色星蝶壁纸透出，主页收紧贴立绘，浅色/深色模式共用一套玻璃控件。',
       themeMode: 'light',
@@ -18,12 +18,12 @@ const MOCK_SKINS: Skin[] = [
     css_content: `
       :root {
         --wb-accent: #7046E8 !important;
-        --wb-bg: #151336 !important;
+        --wb-bg: #E8E4FF !important;
       }
-      body { background-color: #151336 !important; }
+      body { background-color: #E8E4FF !important; }
     `,
-    config: { opacity: 0.88, blur: 24, custom_accent: '#7046E8' },
-    is_builtin: false,
+    config: { opacity: 0.58, blur: 22, custom_accent: '#7046E8' },
+    is_builtin: true,
   },
   {
     manifest: {
@@ -158,12 +158,12 @@ export async function apiApplySkin(skinId: string): Promise<number> {
   return 1;
 }
 
-export async function apiApplyRawCss(css: string): Promise<number> {
+export async function apiApplyRawCss(css: string, themeMode: 'dark' | 'light'): Promise<number> {
   if (isTauri()) {
     const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<number>('apply_raw_css', { css });
+    return invoke<number>('apply_raw_css', { css, themeMode });
   }
-  console.log('[Mock] Applied raw CSS:\n', css);
+  console.log('[Mock] Applied raw CSS in', themeMode, 'mode:\n', css);
   return 1;
 }
 

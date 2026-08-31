@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Skin, SkinConfig } from '../types/skin';
 import { X, Eye, Save, Code, Sparkles } from 'lucide-react';
+import { buildCustomSkin, previewCustomSkin, type CustomSkinInput } from '../utils/customSkin';
 
 interface CustomizerProps {
   initialSkin: Skin | null;
   isOpen: boolean;
   onClose: () => void;
-  onApplyCustom: (css: string) => void;
+  onApplyCustom: (css: string, themeMode: 'dark' | 'light') => void;
   onSaveCustom: (name: string, desc: string, mode: string, accent: string, css: string, config: SkinConfig) => void;
   loading: boolean;
 }
@@ -39,65 +40,41 @@ export const Customizer: React.FC<CustomizerProps> = ({
       setDescription(initialSkin.manifest.description);
       setThemeMode(initialSkin.manifest.themeMode);
       setAccentColor(initialSkin.manifest.accentColor);
-      setOpacity(initialSkin.config.opacity || 0.9);
-      setBlur(initialSkin.config.blur || 16);
-      setFontFamily(initialSkin.config.font_family || 'system-ui');
-      setCustomCss(initialSkin.config.custom_css || initialSkin.css_content || '');
+      setOpacity(initialSkin.config.opacity ?? 0.9);
+      setBlur(initialSkin.config.blur ?? 16);
+      setFontFamily(initialSkin.config.font_family ?? 'system-ui');
+      setCustomCss(initialSkin.config.custom_css ?? '');
     }
   }, [initialSkin]);
 
   if (!isOpen) return null;
 
-  const generateCss = () => {
-    const isDark = themeMode === 'dark';
-    const bgBase = isDark ? '#0b0f19' : '#f8fafc';
-    const textBase = isDark ? '#f8fafc' : '#0f172a';
-
-    let base = `
-      :root {
-        --wb-accent: ${accentColor} !important;
-        --wb-bg: ${bgBase} !important;
-        --wb-text: ${textBase} !important;
-        --wb-font: ${fontFamily} !important;
-      }
-      body, .app-container, #root {
-        font-family: ${fontFamily} !important;
-        background-color: ${bgBase} !important;
-        color: ${textBase} !important;
-      }
-      .chat-bubble, .panel, .sidebar, .card {
-        backdrop-filter: blur(${blur}px) !important;
-        -webkit-backdrop-filter: blur(${blur}px) !important;
-        opacity: ${opacity} !important;
-      }
-      button.primary, .btn-primary, [data-primary="true"] {
-        background-color: ${accentColor} !important;
-        color: ${isDark ? '#000000' : '#ffffff'} !important;
-      }
-    `;
-
-    if (customCss.trim()) {
-      base += `\n/* 用户自定义 CSS */\n${customCss}\n`;
-    }
-
-    return base;
-  };
+  const toInput = (): CustomSkinInput => ({
+    name,
+    description,
+    themeMode,
+    accentColor,
+    opacity,
+    blur,
+    fontFamily,
+    customCss,
+  });
 
   const handleLivePreview = () => {
-    const css = generateCss();
-    onApplyCustom(css);
+    const preview = previewCustomSkin(toInput());
+    onApplyCustom(preview.css, themeMode);
   };
 
   const handleSave = () => {
-    const css = generateCss();
-    const config: SkinConfig = {
-      opacity,
-      blur,
-      custom_accent: accentColor,
-      font_family: fontFamily,
-      custom_css: customCss,
-    };
-    onSaveCustom(name || '我的定制皮肤', description || '用户自定义微调皮肤', themeMode, accentColor, css, config);
+    const built = buildCustomSkin(toInput());
+    onSaveCustom(
+      name || '我的定制皮肤',
+      description || '用户自定义微调皮肤',
+      themeMode,
+      accentColor,
+      built.cssContent,
+      built.config
+    );
     onClose();
   };
 
@@ -214,7 +191,7 @@ export const Customizer: React.FC<CustomizerProps> = ({
                 max="40"
                 step="1"
                 value={blur}
-                onChange={(e) => setBlur(parseInt(e.target.value))}
+                onChange={(e) => setBlur(parseInt(e.target.value, 10))}
                 className="w-full accent-indigo-500"
               />
             </div>

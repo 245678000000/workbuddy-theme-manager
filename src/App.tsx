@@ -150,10 +150,10 @@ export const App: React.FC = () => {
     setIsCustomizerOpen(true);
   };
 
-  const handleApplyCustom = async (css: string) => {
+  const handleApplyCustom = async (css: string, themeMode: 'dark' | 'light') => {
     setLoading(true);
     try {
-      await apiApplyRawCss(css);
+      await apiApplyRawCss(css, themeMode);
       showToast('已在 WorkBuddy 中实时预览微调效果', 'info');
     } catch (e) {
       showToast(`实时预览注入失败: ${e}`, 'error');

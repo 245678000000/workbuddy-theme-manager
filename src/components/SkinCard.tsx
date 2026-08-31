@@ -69,8 +69,8 @@ export const SkinCard: React.FC<SkinCardProps> = ({
               isLight ? 'bg-white/80 text-slate-800' : 'bg-slate-800/70 text-slate-200'
             }`}
             style={{
-              backdropFilter: `blur(${config.blur || 4}px)`,
-              opacity: config.opacity || 1,
+              backdropFilter: `blur(${config.blur ?? 4}px)`,
+              opacity: config.opacity ?? 1,
             }}
           >
             你好，我是 WorkBuddy...

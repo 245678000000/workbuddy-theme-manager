@@ -78,9 +78,10 @@ pub async fn apply_skin(
 #[command]
 pub async fn apply_raw_css(
     css: String,
+    theme_mode: String,
     session: State<'_, Mutex<CdpSessionState>>,
 ) -> Result<usize, String> {
-    inject_raw_css(&session, &css).await
+    inject_raw_css(&session, &css, &theme_mode).await
 }
 
 #[command]

@@ -135,11 +135,23 @@ pub async fn reset_css_on_all_targets(session: &Mutex<CdpSessionState>) -> Resul
     )
 }
 
-pub async fn inject_raw_css(session: &Mutex<CdpSessionState>, css: &str) -> Result<usize, String> {
+fn force_dark_from_theme_mode(theme_mode: &str) -> Result<bool, String> {
+    match theme_mode {
+        "dark" => Ok(true),
+        "light" => Ok(false),
+        _ => Err("theme_mode 必须是 dark 或 light".into()),
+    }
+}
+
+pub async fn inject_raw_css(
+    session: &Mutex<CdpSessionState>,
+    css: &str,
+    theme_mode: &str,
+) -> Result<usize, String> {
     let payload = SkinPayload {
         skin_id: "raw-preview".into(),
         css: css.to_string(),
-        force_dark: true,
+        force_dark: force_dark_from_theme_mode(theme_mode)?,
         stage: None,
         reset: false,
     };
@@ -215,5 +227,12 @@ mod tests {
     #[test]
     fn complete_or_error_accepts_all_targets() {
         assert_eq!(complete_or_error(2, 2, None, "empty").unwrap(), 2);
+    }
+
+    #[test]
+    fn raw_preview_preserves_light_theme_mode() {
+        assert!(!force_dark_from_theme_mode("light").unwrap());
+        assert!(force_dark_from_theme_mode("dark").unwrap());
+        assert!(force_dark_from_theme_mode("auto").is_err());
     }
 }
