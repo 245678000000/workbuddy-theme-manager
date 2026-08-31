@@ -3,11 +3,14 @@
   const STAGE_ID = "wb-skin-stage";
   const PORTRAIT_ID = "wb-skin-portraits";
   const SNAP_KEY = "__wbThemeSnapshot";
-  const OBS_KEY = "__wbSceneObserver";
-  const payload = window.__WB_SKIN_PAYLOAD;
-  if (!payload) return;
+  const incoming = window.__WB_SKIN_PAYLOAD;
+  if (!incoming) return;
 
   const html = document.documentElement;
+
+  function currentPayload() {
+    return window.__wbSkinRuntime && window.__wbSkinRuntime.payload;
+  }
 
   function swapDark(cls) {
     return String(cls || "")
@@ -33,7 +36,7 @@
     };
   }
 
-  function restoreTheme() {
+  function restoreThemeSnapshot() {
     const snap = window[SNAP_KEY];
     if (!snap) return;
     html.className = snap.htmlClass || "";
@@ -58,13 +61,15 @@
   }
 
   function applyThemeClass() {
+    const payload = currentPayload();
+    if (!payload) return;
     if (payload.skinId === "jingtian-starlight") {
       syncNativeTheme();
       html.style.colorScheme = nativeIsLight() ? "light" : "dark";
       return;
     }
     if (!payload.forceDark) {
-      if (window[SNAP_KEY]) restoreTheme();
+      if (window[SNAP_KEY]) restoreThemeSnapshot();
       syncNativeTheme();
       html.style.colorScheme = nativeIsLight() ? "light" : "dark";
       return;
@@ -84,6 +89,8 @@
   }
 
   function ensureStyle() {
+    const payload = currentPayload();
+    if (!payload) return;
     let el = document.getElementById(STYLE_ID);
     if (!el) {
       el = document.createElement("style");
@@ -106,6 +113,8 @@
   }
 
   function ensureStage() {
+    const payload = currentPayload();
+    if (!payload) return;
     const cfg = payload.stage;
     const existingStage = document.getElementById(STAGE_ID);
     const existingPortraits = document.getElementById(PORTRAIT_ID);
@@ -150,7 +159,8 @@
   }
 
   function restyleOfficialSlots() {
-    if (payload.skinId !== "jingtian-starlight") return;
+    const payload = currentPayload();
+    if (!payload || payload.skinId !== "jingtian-starlight") return;
     const dark = !nativeIsLight();
     const css = dark
       ? `
@@ -177,9 +187,9 @@
         --fuel-bg: transparent !important;
         --fuel-card-border: transparent !important;
         --fuel-card-shadow: none !important;
+        --fuel-close-color: rgba(43, 36, 88, 0.35);
         --fuel-primary-disabled-bg: rgba(112, 70, 232, 0.12);
         --fuel-primary-disabled-text: #6E6694;
-        --fuel-close-color: rgba(43, 36, 88, 0.35);
       }
       .fuel-station,
       .fuel-card,
@@ -206,7 +216,8 @@
   const HERO_KEY = "__wbHeroTitleObserver";
 
   function applyHeroTitle() {
-    if (payload.skinId !== "jingtian-starlight") return;
+    const payload = currentPayload();
+    if (!payload || payload.skinId !== "jingtian-starlight") return;
     const el = document.querySelector(".wb-home-header__title");
     if (!el) return;
     const current = (el.textContent || "").trim();
@@ -253,7 +264,16 @@
     applyHeroTitle();
   }
 
-  function cleanup() {
+  function removeSlotStyles() {
+    document.querySelectorAll(".wb-slot, .wb-slot--avatar-top, .daily-checkin").forEach((host) => {
+      const root = host.shadowRoot;
+      if (!root) return;
+      const el = root.getElementById("wb-jingtian-slot");
+      if (el) el.remove();
+    });
+  }
+
+  function removeOwnedLayers() {
     const style = document.getElementById(STYLE_ID);
     if (style) style.remove();
     const stage = document.getElementById(STAGE_ID);
@@ -263,23 +283,48 @@
     html.removeAttribute("data-wb-skin");
     html.removeAttribute("data-wb-scene");
     html.removeAttribute("data-wb-stage");
-    restoreHeroTitle();
-    restoreTheme();
-    if (window[OBS_KEY]) {
-      window[OBS_KEY].disconnect();
-      window[OBS_KEY] = null;
+    html.removeAttribute("data-wb-native-theme");
+  }
+
+  function dispose(options) {
+    const restoreTheme = !!(options && options.restoreTheme);
+    const runtime = window.__wbSkinRuntime;
+    if (runtime && runtime.frame) {
+      cancelAnimationFrame(runtime.frame);
+      runtime.frame = 0;
     }
-    try {
-      localStorage.removeItem("wb-skin-payload");
-    } catch (e) {}
+    if (runtime && runtime.observer) {
+      runtime.observer.disconnect();
+      runtime.observer = null;
+    }
+    if (window.__wbSceneObserver) {
+      window.__wbSceneObserver.disconnect();
+      window.__wbSceneObserver = null;
+    }
+    restoreHeroTitle();
+    removeSlotStyles();
+    removeOwnedLayers();
+    if (restoreTheme) {
+      restoreThemeSnapshot();
+      try {
+        localStorage.removeItem("wb-skin-payload");
+      } catch (e) {}
+    }
+    window.__wbSkinRuntime = null;
   }
 
   function watch() {
-    if (window[OBS_KEY]) return;
-    let frame = 0;
-    window[OBS_KEY] = new MutationObserver(() => {
-      if (frame) cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
+    const runtime = window.__wbSkinRuntime;
+    if (!runtime || runtime.observer) return;
+    runtime.frame = 0;
+    runtime.observer = new MutationObserver(() => {
+      const active = window.__wbSkinRuntime;
+      if (!active) return;
+      if (active.frame) cancelAnimationFrame(active.frame);
+      active.frame = requestAnimationFrame(() => {
+        active.frame = 0;
+        const payload = currentPayload();
+        if (!payload) return;
         detectScene();
         restyleOfficialSlots();
         if (payload.skinId === "jingtian-starlight") applyThemeClass();
@@ -297,7 +342,7 @@
         if (!document.getElementById(STYLE_ID)) ensureStyle();
       });
     });
-    window[OBS_KEY].observe(html, {
+    runtime.observer.observe(html, {
       childList: true,
       subtree: true,
       attributes: true,
@@ -306,6 +351,8 @@
   }
 
   function boot() {
+    const payload = currentPayload();
+    if (!payload) return;
     html.setAttribute("data-wb-skin", payload.skinId || "custom");
     applyThemeClass();
     ensureStyle();
@@ -315,16 +362,31 @@
     watch();
   }
 
-  if (payload.reset) {
-    cleanup();
+  if (incoming.reset) {
+    if (window.__wbSkinRuntime && typeof window.__wbSkinRuntime.dispose === "function") {
+      window.__wbSkinRuntime.dispose({ restoreTheme: true });
+    } else {
+      dispose({ restoreTheme: true });
+    }
     return "reset";
   }
 
+  if (window.__wbSkinRuntime && typeof window.__wbSkinRuntime.dispose === "function") {
+    window.__wbSkinRuntime.dispose({ restoreTheme: false });
+  }
+
+  window.__wbSkinRuntime = {
+    payload: incoming,
+    observer: null,
+    frame: 0,
+    dispose,
+  };
+
   try {
-    localStorage.setItem("wb-skin-payload", JSON.stringify(payload));
+    localStorage.setItem("wb-skin-payload", JSON.stringify(incoming));
   } catch (e) {}
 
   if (document.body) boot();
   else document.addEventListener("DOMContentLoaded", boot, { once: true });
-  return "applied:" + (payload.skinId || "custom");
+  return "applied:" + (incoming.skinId || "custom");
 })();

@@ -176,11 +176,11 @@ export const App: React.FC = () => {
       await refreshSkins();
       try {
         await apiApplySkin(created.manifest.id);
+        setActiveSkinId(created.manifest.id);
+        showToast(`皮肤「${name}」已成功保存并应用`, 'success');
       } catch (applyErr) {
-        console.error('保存后应用失败', applyErr);
+        showToast(`皮肤已保存，但应用失败：${applyErr}`, 'error');
       }
-      setActiveSkinId(created.manifest.id);
-      showToast(`皮肤「${name}」已成功保存并应用`, 'success');
     } catch (e) {
       showToast(`保存皮肤失败: ${e}`, 'error');
     } finally {

@@ -27,6 +27,22 @@ async fn injectable_targets(port: u16) -> Result<Vec<CdpTarget>, String> {
     Ok(filtered)
 }
 
+fn complete_or_error(
+    total: usize,
+    success: usize,
+    last_error: Option<String>,
+    empty_msg: &str,
+) -> Result<usize, String> {
+    if total == 0 || success == 0 {
+        return Err(last_error.unwrap_or_else(|| empty_msg.to_string()));
+    }
+    if success < total {
+        let detail = last_error.unwrap_or_else(|| empty_msg.to_string());
+        return Err(format!("{detail}（成功 {success}/{total}）"));
+    }
+    Ok(success)
+}
+
 fn injection_commands(
     persist: &str,
     script: &str,
@@ -58,11 +74,13 @@ pub async fn inject_payload(
     let script = compiler::apply_script(payload)?;
     let persist = compiler::persist_loader_source();
     let targets = injectable_targets(port).await?;
+    let total = targets.len();
     let mut success = 0;
     let mut last_error = None;
 
     for target in targets {
         let Some(ws_url) = &target.web_socket_debugger_url else {
+            last_error = Some("目标缺少 WebSocket 调试地址".into());
             continue;
         };
         let installed = lock_session(session).is_loader_installed(&target.id);
@@ -77,21 +95,24 @@ pub async fn inject_payload(
         }
     }
 
-    if success == 0 {
-        return Err(
-            last_error.unwrap_or_else(|| "皮肤注入失败：WorkBuddy 页面没有接受脚本。".into())
-        );
-    }
-    Ok(success)
+    complete_or_error(
+        total,
+        success,
+        last_error,
+        "皮肤注入失败：WorkBuddy 页面没有接受脚本。",
+    )
 }
 
 pub async fn reset_css_on_all_targets(session: &Mutex<CdpSessionState>) -> Result<usize, String> {
     let port = require_owned_port(session)?;
     let script = compiler::reset_script()?;
     let targets = injectable_targets(port).await?;
+    let total = targets.len();
     let mut success = 0;
+    let mut last_error = None;
     for target in targets {
         let Some(ws_url) = &target.web_socket_debugger_url else {
+            last_error = Some("目标缺少 WebSocket 调试地址".into());
             continue;
         };
         let commands = vec![(
@@ -101,11 +122,17 @@ pub async fn reset_css_on_all_targets(session: &Mutex<CdpSessionState>) -> Resul
                 "returnByValue": true
             }),
         )];
-        if send_cdp_commands(ws_url, commands).await.is_ok() {
-            success += 1;
+        match send_cdp_commands(ws_url, commands).await {
+            Ok(_) => success += 1,
+            Err(err) => last_error = Some(err),
         }
     }
-    Ok(success)
+    complete_or_error(
+        total,
+        success,
+        last_error,
+        "皮肤还原失败：WorkBuddy 页面没有接受脚本。",
+    )
 }
 
 pub async fn inject_raw_css(session: &Mutex<CdpSessionState>, css: &str) -> Result<usize, String> {
@@ -170,5 +197,23 @@ mod tests {
             require_owned_port(&session).unwrap(),
             WORKBUDDY_DEFAULT_PORT
         );
+    }
+
+    #[test]
+    fn complete_or_error_rejects_zero_success() {
+        let err = complete_or_error(2, 0, Some("timeout".into()), "empty").unwrap_err();
+        assert_eq!(err, "timeout");
+    }
+
+    #[test]
+    fn complete_or_error_rejects_partial_success() {
+        let err = complete_or_error(2, 1, Some("ws timeout".into()), "empty").unwrap_err();
+        assert!(err.contains("ws timeout"));
+        assert!(err.contains("1/2"));
+    }
+
+    #[test]
+    fn complete_or_error_accepts_all_targets() {
+        assert_eq!(complete_or_error(2, 2, None, "empty").unwrap(), 2);
     }
 }
