@@ -1,0 +1,9 @@
+.DS_Store
+*.log
+.playwright-cli/
+.pnpm-store/
+node_modules/
+dist/
+src-tauri/target/
+coverage/
+*.wbskin

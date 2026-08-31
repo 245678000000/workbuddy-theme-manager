@@ -1,0 +1,236 @@
+/* WorkBuddy skin kernel — maps --wb-* tokens onto the live 5.3 DOM. */
+
+#wb-skin-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#wb-skin-stage .wb-wall {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+#wb-skin-portraits {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#wb-skin-portraits .wb-portrait {
+  position: absolute;
+  right: clamp(12px, 3vw, 56px);
+  bottom: 0;
+  height: clamp(420px, 78vh, 880px);
+  width: auto;
+  max-width: min(520px, 42vw);
+  object-fit: contain;
+  object-position: right bottom;
+  filter: drop-shadow(-8px 10px 24px var(--wb-portrait-shadow, rgba(112, 70, 232, 0.4)));
+  opacity: 0.96;
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+
+html[data-wb-scene="chat"] #wb-skin-portraits .wb-portrait-home,
+html[data-wb-scene="home"] #wb-skin-portraits .wb-portrait-chat {
+  opacity: 0;
+}
+
+html[data-wb-skin] {
+  color-scheme: var(--wb-color-scheme, dark);
+}
+
+html[data-wb-skin] body,
+html[data-wb-skin] #root,
+html[data-wb-skin] .teams-container {
+  color: var(--wb-text) !important;
+}
+
+html[data-wb-stage="1"] body,
+html[data-wb-stage="1"] #root,
+html[data-wb-stage="1"] .teams-container,
+html[data-wb-stage="1"] .teams-content-wrapper,
+html[data-wb-stage="1"] .teams-main-content,
+html[data-wb-stage="1"] .main-layout-wrapper-pc,
+html[data-wb-stage="1"] .main-layout-content-pc,
+html[data-wb-stage="1"] .wb-home-page,
+html[data-wb-stage="1"] .wb-home-page-pc,
+html[data-wb-stage="1"] .wb-home-page__main-content,
+html[data-wb-stage="1"] .wb-home-route,
+html[data-wb-stage="1"] .wb-home-route__body,
+html[data-wb-stage="1"] .conversation-page-chrome,
+html[data-wb-stage="1"] .conversation-shell,
+html[data-wb-stage="1"] .conversation-shell__main,
+html[data-wb-stage="1"] .cr-message-list,
+html[data-wb-stage="1"] .cr-message-list-viewport,
+html[data-wb-stage="1"] .simplebar-content-wrapper,
+html[data-wb-stage="1"] .simplebar-content,
+html[data-wb-stage="1"] .conversation-list,
+html[data-wb-stage="1"] [class*="_grid_"],
+html[data-wb-stage="1"] [class*="_gridView_"],
+html[data-wb-stage="1"] [class*="gridViewItem"] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html[data-wb-skin]:not([data-wb-stage="1"]) body,
+html[data-wb-skin]:not([data-wb-stage="1"]) #root {
+  background-color: var(--wb-bg) !important;
+  background-image: var(--wb-bg-image, none) !important;
+}
+
+html[data-wb-skin] #root,
+html[data-wb-skin] .teams-container {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+html[data-wb-skin] .conversation-sidebar,
+html[data-wb-skin] .conversation-list-header,
+html[data-wb-skin] .conversation-list-content,
+html[data-wb-skin] .sidebar-next,
+html[data-wb-skin] .sidebar-next-body,
+html[data-wb-skin] .sidebar-next-main-header,
+html[data-wb-skin] .detail-panel-container,
+html[data-wb-skin] .detail-panel,
+html[data-wb-skin] .detail-layout,
+html[data-wb-skin] .detail-sidebar,
+html[data-wb-skin] .sources-panel,
+html[data-wb-skin] .cb-overview-panel,
+html[data-wb-skin] .user-menu-trigger-wrapper,
+html[data-wb-skin] .knowledge-sidebar-pc,
+html[data-wb-skin] .knowledge-sidebar-top-pc,
+html[data-wb-skin] .knowledge-sidebar-scroll-pc,
+html[data-wb-skin] .knowledge-sidebar-bottom-tools-pc,
+html[data-wb-skin] .space-panel,
+html[data-wb-skin] .wb-home-composer,
+html[data-wb-skin] .wb-home-page-header-pc {
+  background-color: color-mix(
+    in srgb,
+    var(--wb-surface) calc(var(--wb-panel-opacity) * 100%),
+    transparent
+  ) !important;
+  backdrop-filter: blur(var(--wb-blur)) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(var(--wb-blur)) saturate(140%) !important;
+  border-color: var(--wb-border) !important;
+  color: var(--wb-text) !important;
+}
+
+html[data-wb-skin] .main-content,
+html[data-wb-skin] .main-content--chat,
+html[data-wb-skin] .main-content--welcome,
+html[data-wb-skin] .main-content--space,
+html[data-wb-skin] .chat-container,
+html[data-wb-skin] .wb-home-page-body-pc,
+html[data-wb-skin] [class*="cbChat"] {
+  background-color: color-mix(
+    in srgb,
+    var(--wb-chat-bg) calc(var(--wb-main-opacity) * 100%),
+    transparent
+  ) !important;
+  color: var(--wb-text) !important;
+}
+
+html[data-wb-stage="1"][data-wb-scene="home"] .main-content,
+html[data-wb-stage="1"][data-wb-scene="home"] .main-content--welcome,
+html[data-wb-stage="1"][data-wb-scene="home"] .chat-container,
+html[data-wb-stage="1"][data-wb-scene="home"] .chat-container--welcome,
+html[data-wb-stage="1"][data-wb-scene="home"] .wb-home-page-body-pc,
+html[data-wb-stage="1"][data-wb-scene="home"] [class*="cbChat"] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html[data-wb-skin] [class*="chatMessageContainer"],
+html[data-wb-skin] [class*="chatMessageBox"],
+html[data-wb-skin] [class*="group-messages"],
+html[data-wb-skin] .empty-content {
+  background-color: transparent !important;
+}
+
+html[data-wb-skin] [class*="userMessageBubble"] {
+  background-color: var(--wb-bubble-user) !important;
+  color: var(--wb-bubble-user-text) !important;
+  border-color: transparent !important;
+}
+
+html[data-wb-skin] [class*="userMessageText"] {
+  color: var(--wb-bubble-user-text) !important;
+}
+
+html[data-wb-skin] [class*="assistantMessage"],
+html[data-wb-skin] .cb-assistant-message {
+  background-color: var(--wb-bubble-assistant) !important;
+  color: var(--wb-bubble-assistant-text) !important;
+}
+
+html[data-wb-skin] [class*="assistantTextContent"],
+html[data-wb-skin] [class*="assistantMessageContent"] {
+  color: var(--wb-bubble-assistant-text) !important;
+}
+
+html[data-wb-skin] [class*="input-area-container"],
+html[data-wb-skin] [class*="contentOverlayWrapper"],
+html[data-wb-skin] [class*="contentWrapper"] {
+  background-color: color-mix(
+    in srgb,
+    var(--wb-surface) calc(var(--wb-panel-opacity) * 100%),
+    transparent
+  ) !important;
+  backdrop-filter: blur(var(--wb-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--wb-blur)) !important;
+  border-color: var(--wb-border) !important;
+  color: var(--wb-text) !important;
+}
+
+html[data-wb-skin] .conversation-sidebar,
+html[data-wb-skin] .conversation-list-header,
+html[data-wb-skin] .conversation-list-content,
+html[data-wb-skin] .conversation-list-tab-button,
+html[data-wb-skin] .sidebar-next,
+html[data-wb-skin] .detail-panel,
+html[data-wb-skin] .sources-panel,
+html[data-wb-skin] .user-menu-trigger {
+  color: var(--wb-text) !important;
+}
+
+html[data-wb-skin] .conversation-list-tab-button {
+  opacity: 0.85;
+}
+
+html[data-wb-skin] .logo-workbuddy-title,
+html[data-wb-skin] .conversation-section-label-text,
+html[data-wb-skin] .conversation-list-version-badge,
+html[data-wb-skin] .conversation-sidebar [class*="_time"],
+html[data-wb-skin] .wb-input-footer {
+  color: var(--wb-text-muted) !important;
+}
+
+html[data-wb-skin] .conversation-sidebar [class*="_title"],
+html[data-wb-skin] .wb-home-header__title,
+html[data-wb-skin] .conversation-item {
+  color: var(--wb-text) !important;
+}
+
+html[data-wb-skin] a,
+html[data-wb-skin] [class*="accent"] {
+  color: var(--wb-accent);
+}
+
+html[data-wb-skin] body,
+html[data-wb-skin] #root {
+  font-family: var(--wb-font, inherit) !important;
+}
+
+html[data-wb-skin] ::selection {
+  background: color-mix(in srgb, var(--wb-accent) 40%, transparent);
+  color: var(--wb-text);
+}

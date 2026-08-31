@@ -1,0 +1,36 @@
+[package]
+name = "workbuddy-skin-manager"
+version = "1.0.0"
+description = "WorkBuddy Desktop Skin & Theme Manager"
+authors = ["Antigravity"]
+edition = "2021"
+
+[lib]
+name = "workbuddy_skin_manager_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+tokio-tungstenite = "0.24"
+futures-util = "0.3"
+sysinfo = "0.33"
+dirs = "6.0"
+zip = "2.2"
+walkdir = "2.5"
+uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+base64 = "0.22"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
