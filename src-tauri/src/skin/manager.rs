@@ -17,6 +17,32 @@ fn active_path() -> PathBuf {
     get_user_skins_dir().join("active.json")
 }
 
+fn validate_custom_skin_id(skin_id: &str) -> Result<(), String> {
+    let suffix = skin_id
+        .strip_prefix("custom-")
+        .ok_or_else(|| "只能操作自定义皮肤".to_string())?;
+    if suffix.is_empty() || suffix.len() > 64 {
+        return Err("自定义皮肤 ID 长度无效".into());
+    }
+    if !suffix
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    {
+        return Err("自定义皮肤 ID 含非法字符".into());
+    }
+    Ok(())
+}
+
+fn custom_skin_dir(skin_id: &str) -> Result<PathBuf, String> {
+    validate_custom_skin_id(skin_id)?;
+    let root = get_user_skins_dir();
+    let candidate = root.join(skin_id);
+    if candidate.parent() != Some(root.as_path()) {
+        return Err("皮肤目录越出本地皮肤库".into());
+    }
+    Ok(candidate)
+}
+
 pub fn save_active_skin_id(skin_id: &str) -> Result<(), String> {
     let payload = serde_json::json!({ "skin_id": skin_id });
     fs::write(active_path(), payload.to_string()).map_err(|e| format!("写入当前皮肤失败: {e}"))
@@ -273,6 +299,11 @@ pub fn list_all_skins() -> Vec<Skin> {
             let Ok(manifest) = serde_json::from_str::<SkinManifest>(&manifest_str) else {
                 continue;
             };
+            if validate_custom_skin_id(&manifest.id).is_err()
+                || path.file_name().and_then(|name| name.to_str()) != Some(manifest.id.as_str())
+            {
+                continue;
+            }
             if seen.contains(&manifest.id) {
                 continue;
             }
@@ -364,10 +395,7 @@ pub fn save_custom_skin_to_disk(
 }
 
 pub fn delete_custom_skin_from_disk(skin_id: &str) -> Result<(), String> {
-    if skin_id.starts_with("builtin-") || skin_id == "jingtian-starlight" {
-        return Err("内置皮肤不能删除".into());
-    }
-    let user_dir = get_user_skins_dir().join(skin_id);
+    let user_dir = custom_skin_dir(skin_id)?;
     if user_dir.exists() {
         fs::remove_dir_all(user_dir).map_err(|e| format!("删除皮肤目录失败: {e}"))?;
     }
@@ -375,4 +403,33 @@ pub fn delete_custom_skin_from_disk(skin_id: &str) -> Result<(), String> {
         clear_active_skin_id();
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn custom_skin_id_accepts_generated_ids() {
+        assert!(validate_custom_skin_id("custom-deadbeef").is_ok());
+    }
+
+    #[test]
+    fn custom_skin_id_rejects_traversal_and_absolute_paths() {
+        for value in [
+            "../outside",
+            "custom-../../outside",
+            "/tmp/outside",
+            ".",
+            "builtin-default",
+        ] {
+            assert!(validate_custom_skin_id(value).is_err(), "accepted {value}");
+        }
+    }
+
+    #[test]
+    fn custom_skin_id_rejects_separators_and_overlong_values() {
+        assert!(validate_custom_skin_id("custom-a/b").is_err());
+        assert!(validate_custom_skin_id(&format!("custom-{}", "a".repeat(65))).is_err());
+    }
 }
