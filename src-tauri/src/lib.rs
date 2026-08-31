@@ -3,11 +3,15 @@ pub mod commands;
 pub mod process;
 pub mod skin;
 
+use std::sync::Mutex;
+
+use cdp::session::CdpSessionState;
 use commands::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(Mutex::new(CdpSessionState::default()))
         .invoke_handler(tauri::generate_handler![
             get_workbuddy_status,
             launch_workbuddy,

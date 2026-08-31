@@ -1,6 +1,9 @@
-use crate::cdp::injector::{
-    inject_payload, inject_raw_css, mark_cdp_session_down, reset_css_on_all_targets,
-};
+use std::sync::Mutex;
+
+use tauri::{command, State};
+
+use crate::cdp::injector::{inject_payload, inject_raw_css, reset_css_on_all_targets};
+use crate::cdp::session::{lock_session, CdpSessionState, WORKBUDDY_DEFAULT_PORT};
 use crate::process::detector::{
     check_cdp_port_available, check_workbuddy_running, find_workbuddy_install_path,
 };
@@ -11,74 +14,76 @@ use crate::skin::manager::{
     load_active_skin_id, save_active_skin_id, save_custom_skin_to_disk,
 };
 use crate::skin::models::{Skin, SkinConfig, WorkBuddyStatus};
-use tauri::command;
-
-pub const WORKBUDDY_DEFAULT_PORT: u16 = 9333;
 
 #[command]
-pub async fn get_workbuddy_status(port: Option<u16>) -> WorkBuddyStatus {
-    let port = port.unwrap_or(WORKBUDDY_DEFAULT_PORT);
+pub async fn get_workbuddy_status(
+    session: State<'_, Mutex<CdpSessionState>>,
+) -> Result<WorkBuddyStatus, String> {
+    let port = WORKBUDDY_DEFAULT_PORT;
     let install_path = find_workbuddy_install_path().map(|p| p.to_string_lossy().to_string());
     let is_installed = install_path.is_some();
     let pid = check_workbuddy_running();
     let is_running = pid.is_some();
-    let cdp_connected = if is_running {
-        check_cdp_port_available(port).await
-    } else {
-        false
-    };
+    let endpoint_up = is_running && check_cdp_port_available(port).await;
 
-    if !cdp_connected {
-        mark_cdp_session_down();
+    let mut state = lock_session(&session);
+    if !is_running || !endpoint_up {
+        state.clear();
     }
+    let cdp_connected = endpoint_up && state.is_owned(port);
+    drop(state);
 
-    WorkBuddyStatus {
+    Ok(WorkBuddyStatus {
         is_installed,
         install_path,
         is_running,
         cdp_connected,
         debugging_port: port,
         pid,
-    }
+    })
 }
 
 #[command]
-pub async fn launch_workbuddy(port: Option<u16>) -> Result<(), String> {
-    let port = port.unwrap_or(WORKBUDDY_DEFAULT_PORT);
-    launch_workbuddy_with_cdp(port)
+pub async fn launch_workbuddy(session: State<'_, Mutex<CdpSessionState>>) -> Result<(), String> {
+    launch_workbuddy_with_cdp(&session).await
 }
 
 #[command]
-pub async fn close_workbuddy() -> Result<usize, String> {
-    terminate_workbuddy()
+pub async fn close_workbuddy(session: State<'_, Mutex<CdpSessionState>>) -> Result<usize, String> {
+    let count = terminate_workbuddy()?;
+    lock_session(&session).clear();
+    Ok(count)
 }
 
 #[command]
-pub async fn apply_skin(skin_id: String, port: Option<u16>) -> Result<usize, String> {
-    let port = port.unwrap_or(WORKBUDDY_DEFAULT_PORT);
+pub async fn apply_skin(
+    skin_id: String,
+    session: State<'_, Mutex<CdpSessionState>>,
+) -> Result<usize, String> {
     if skin_id == "builtin-default" {
-        let count = reset_css_on_all_targets(port).await?;
+        let count = reset_css_on_all_targets(&session).await?;
         clear_active_skin_id();
         return Ok(count);
     }
 
     let skin = find_skin(&skin_id).ok_or_else(|| format!("未找到皮肤「{skin_id}」"))?;
     let payload = compiler::compile(&skin)?;
-    let count = inject_payload(port, &payload).await?;
+    let count = inject_payload(&session, &payload).await?;
     let _ = save_active_skin_id(&skin_id);
     Ok(count)
 }
 
 #[command]
-pub async fn apply_raw_css(css: String, port: Option<u16>) -> Result<usize, String> {
-    let port = port.unwrap_or(WORKBUDDY_DEFAULT_PORT);
-    inject_raw_css(port, &css).await
+pub async fn apply_raw_css(
+    css: String,
+    session: State<'_, Mutex<CdpSessionState>>,
+) -> Result<usize, String> {
+    inject_raw_css(&session, &css).await
 }
 
 #[command]
-pub async fn reset_skin(port: Option<u16>) -> Result<usize, String> {
-    let port = port.unwrap_or(WORKBUDDY_DEFAULT_PORT);
-    let count = reset_css_on_all_targets(port).await?;
+pub async fn reset_skin(session: State<'_, Mutex<CdpSessionState>>) -> Result<usize, String> {
+    let count = reset_css_on_all_targets(&session).await?;
     clear_active_skin_id();
     Ok(count)
 }

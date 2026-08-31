@@ -118,26 +118,26 @@ const MOCK_SKINS: Skin[] = [
   },
 ];
 
-export async function apiGetWorkBuddyStatus(port?: number): Promise<WorkBuddyStatus> {
+export async function apiGetWorkBuddyStatus(): Promise<WorkBuddyStatus> {
   if (isTauri()) {
     const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<WorkBuddyStatus>('get_workbuddy_status', { port });
+    return invoke<WorkBuddyStatus>('get_workbuddy_status');
   }
   return {
     is_installed: true,
     install_path: '/Applications/WorkBuddy.app',
     is_running: false,
     cdp_connected: false,
-    debugging_port: 9222,
+    debugging_port: 9333,
   };
 }
 
-export async function apiLaunchWorkBuddy(port?: number): Promise<void> {
+export async function apiLaunchWorkBuddy(): Promise<void> {
   if (isTauri()) {
     const { invoke } = await import('@tauri-apps/api/core');
-    return invoke('launch_workbuddy', { port });
+    return invoke('launch_workbuddy');
   }
-  console.log('[Mock] Launching WorkBuddy with CDP port:', port);
+  console.log('[Mock] Launching WorkBuddy with owned CDP session');
 }
 
 export async function apiCloseWorkBuddy(): Promise<number> {
@@ -149,19 +149,19 @@ export async function apiCloseWorkBuddy(): Promise<number> {
   return 1;
 }
 
-export async function apiApplySkin(skinId: string, port?: number): Promise<number> {
+export async function apiApplySkin(skinId: string): Promise<number> {
   if (isTauri()) {
     const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<number>('apply_skin', { skinId, port });
+    return invoke<number>('apply_skin', { skinId });
   }
   console.log('[Mock] Applied skin:', skinId);
   return 1;
 }
 
-export async function apiApplyRawCss(css: string, port?: number): Promise<number> {
+export async function apiApplyRawCss(css: string): Promise<number> {
   if (isTauri()) {
     const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<number>('apply_raw_css', { css, port });
+    return invoke<number>('apply_raw_css', { css });
   }
   console.log('[Mock] Applied raw CSS:\n', css);
   return 1;
@@ -175,10 +175,10 @@ export async function apiGetActiveSkinId(): Promise<string | null> {
   return 'jingtian-starlight';
 }
 
-export async function apiResetSkin(port?: number): Promise<number> {
+export async function apiResetSkin(): Promise<number> {
   if (isTauri()) {
     const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<number>('reset_skin', { port });
+    return invoke<number>('reset_skin');
   }
   console.log('[Mock] Reset skin to native');
   return 1;
