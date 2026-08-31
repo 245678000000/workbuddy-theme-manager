@@ -227,7 +227,7 @@ export const App: React.FC = () => {
             <p className="text-slate-400 leading-relaxed">
               1. 点击右上角「<strong>启动 WorkBuddy</strong>」，管理器将以安全调试端口模式启动客户端；<br />
               2. 在下方画廊中挑选心仪的主题，点击「<strong>一键应用</strong>」，样式将实时注入 WorkBuddy，无需重启；<br />
-              3. 支持点击卡片右下角的调节图标进行<strong>二次微调与壁纸/强调色定制</strong>，随时点击「安全还原原生」一键恢复。
+              3. 支持点击卡片右下角的调节图标进行<strong>二次微调与强调色定制</strong>，随时点击「安全还原原生」一键恢复。
             </p>
           </div>
         </div>
