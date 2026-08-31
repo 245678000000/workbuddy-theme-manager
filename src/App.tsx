@@ -94,8 +94,11 @@ export const App: React.FC = () => {
   const handleClose = async () => {
     setLoading(true);
     try {
-      await apiCloseWorkBuddy();
-      showToast('已关闭 WorkBuddy 进程', 'info');
+      const closed = await apiCloseWorkBuddy();
+      showToast(
+        closed > 0 ? `已安全关闭 ${closed} 个 WorkBuddy 进程` : '未发现可安全关闭的 WorkBuddy 进程',
+        'info'
+      );
       setTimeout(refreshStatus, 1000);
     } catch (e) {
       showToast(`关闭失败: ${e}`, 'error');

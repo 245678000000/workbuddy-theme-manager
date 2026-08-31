@@ -49,7 +49,7 @@ pub async fn launch_workbuddy(port: Option<u16>) -> Result<(), String> {
 }
 
 #[command]
-pub async fn close_workbuddy() -> Result<(), String> {
+pub async fn close_workbuddy() -> Result<usize, String> {
     terminate_workbuddy()
 }
 

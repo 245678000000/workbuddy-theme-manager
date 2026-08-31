@@ -140,12 +140,13 @@ export async function apiLaunchWorkBuddy(port?: number): Promise<void> {
   console.log('[Mock] Launching WorkBuddy with CDP port:', port);
 }
 
-export async function apiCloseWorkBuddy(): Promise<void> {
+export async function apiCloseWorkBuddy(): Promise<number> {
   if (isTauri()) {
     const { invoke } = await import('@tauri-apps/api/core');
-    return invoke('close_workbuddy');
+    return invoke<number>('close_workbuddy');
   }
   console.log('[Mock] Closing WorkBuddy');
+  return 1;
 }
 
 export async function apiApplySkin(skinId: string, port?: number): Promise<number> {

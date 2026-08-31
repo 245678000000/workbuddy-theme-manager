@@ -69,12 +69,12 @@ export const Header: React.FC<HeaderProps> = ({
         {status?.is_installed && (
           <button
             onClick={onLaunch}
-            disabled={loading}
+            disabled={loading || status.is_running}
             className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all active:scale-95 disabled:opacity-50"
             title="以带调试端口的方式启动 WorkBuddy，以便动态注入皮肤"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            {status.is_running ? '重启并接入' : '启动 WorkBuddy'}
+            {status.is_running ? '请先安全关闭后启动' : '启动 WorkBuddy'}
           </button>
         )}
 
