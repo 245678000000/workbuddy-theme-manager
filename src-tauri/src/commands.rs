@@ -14,6 +14,7 @@ use crate::skin::manager::{
     load_active_skin_id, save_active_skin_id, save_custom_skin_to_disk,
 };
 use crate::skin::models::{Skin, SkinConfig, WorkBuddyStatus};
+use crate::skin::paths::SkinPaths;
 
 #[command]
 pub async fn get_workbuddy_status(
@@ -59,6 +60,7 @@ pub async fn close_workbuddy(session: State<'_, Mutex<CdpSessionState>>) -> Resu
 pub async fn apply_skin(
     skin_id: String,
     session: State<'_, Mutex<CdpSessionState>>,
+    paths: State<'_, SkinPaths>,
 ) -> Result<usize, String> {
     if skin_id == "builtin-default" {
         let count = reset_css_on_all_targets(&session).await?;
@@ -66,8 +68,8 @@ pub async fn apply_skin(
         return Ok(count);
     }
 
-    let skin = find_skin(&skin_id).ok_or_else(|| format!("未找到皮肤「{skin_id}」"))?;
-    let payload = compiler::compile(&skin)?;
+    let skin = find_skin(&paths, &skin_id).ok_or_else(|| format!("未找到皮肤「{skin_id}」"))?;
+    let payload = compiler::compile(&skin, &paths)?;
     let count = inject_payload(&session, &payload).await?;
     let _ = save_active_skin_id(&skin_id);
     Ok(count)
@@ -94,8 +96,8 @@ pub fn get_active_skin_id() -> Option<String> {
 }
 
 #[command]
-pub fn get_skins() -> Vec<Skin> {
-    list_all_skins()
+pub fn get_skins(paths: State<'_, SkinPaths>) -> Vec<Skin> {
+    list_all_skins(&paths)
 }
 
 #[command]
@@ -106,8 +108,10 @@ pub fn save_custom_skin(
     accent_color: String,
     css_content: String,
     config: SkinConfig,
+    paths: State<'_, SkinPaths>,
 ) -> Result<Skin, String> {
     save_custom_skin_to_disk(
+        &paths,
         &name,
         &description,
         &theme_mode,
@@ -118,6 +122,6 @@ pub fn save_custom_skin(
 }
 
 #[command]
-pub fn delete_custom_skin(skin_id: String) -> Result<(), String> {
-    delete_custom_skin_from_disk(&skin_id)
+pub fn delete_custom_skin(skin_id: String, paths: State<'_, SkinPaths>) -> Result<(), String> {
+    delete_custom_skin_from_disk(&paths, &skin_id)
 }

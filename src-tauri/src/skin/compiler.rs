@@ -2,6 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use super::models::{Skin, SkinTokens};
+use super::paths::SkinPaths;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use serde::Serialize;
@@ -50,12 +51,12 @@ pub fn reset_script() -> Result<String, String> {
     })
 }
 
-pub fn compile(skin: &Skin) -> Result<SkinPayload, String> {
+pub fn compile(skin: &Skin, paths: &SkinPaths) -> Result<SkinPayload, String> {
     let tokens = resolve_tokens(skin);
     let token_css = token_block(&tokens);
-    let extra = extra_css(skin);
+    let extra = extra_css(skin, paths);
     let css = format!("{token_css}\n{KERNEL_CSS}\n{extra}");
-    let stage = load_stage(skin);
+    let stage = load_stage(skin, paths);
     let mut warnings_stage = stage;
     if skin.manifest.id == "jingtian-starlight" && warnings_stage.is_none() {
         warnings_stage = Some(StagePayload {
@@ -153,7 +154,7 @@ fn token_block(tokens: &SkinTokens) -> String {
     )
 }
 
-fn extra_css(skin: &Skin) -> String {
+fn extra_css(skin: &Skin, paths: &SkinPaths) -> String {
     let mut parts = Vec::new();
     if let Some(custom) = &skin.config.custom_css {
         if !custom.trim().is_empty() {
@@ -163,28 +164,19 @@ fn extra_css(skin: &Skin) -> String {
     if !skin.css_content.trim().is_empty() && !skin.is_builtin {
         parts.push(skin.css_content.clone());
     }
-    if let Some(theme) = load_theme_css(skin) {
+    if let Some(theme) = load_theme_css(skin, paths) {
         parts.push(theme);
     }
     parts.join("\n")
 }
 
-fn load_theme_css(skin: &Skin) -> Option<String> {
+fn load_theme_css(skin: &Skin, paths: &SkinPaths) -> Option<String> {
     let mut candidates = Vec::new();
     if let Some(source) = &skin.source_path {
         candidates.push(PathBuf::from(source).join("theme.css"));
     }
-    candidates.push(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("skins")
-            .join(&skin.manifest.id)
-            .join("theme.css"),
-    );
-    candidates.push(
-        super::manager::get_user_skins_dir()
-            .join(&skin.manifest.id)
-            .join("theme.css"),
-    );
+    candidates.push(paths.bundled_skin_dir(&skin.manifest.id).join("theme.css"));
+    candidates.push(paths.user_root.join(&skin.manifest.id).join("theme.css"));
 
     let mut seen = std::collections::HashSet::new();
     for path in candidates {
@@ -203,8 +195,8 @@ fn load_theme_css(skin: &Skin) -> Option<String> {
     None
 }
 
-fn load_stage(skin: &Skin) -> Option<StagePayload> {
-    let dirs = asset_dirs(skin);
+fn load_stage(skin: &Skin, paths: &SkinPaths) -> Option<StagePayload> {
+    let dirs = asset_dirs(skin, paths);
     let wallpaper = first_existing(
         &dirs,
         &["wall.webp", "wallpaper.webp", "bg.webp", "background.webp"],
@@ -246,22 +238,17 @@ fn load_stage(skin: &Skin) -> Option<StagePayload> {
     })
 }
 
-fn asset_dirs(skin: &Skin) -> Vec<PathBuf> {
+fn asset_dirs(skin: &Skin, paths: &SkinPaths) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
     if let Some(source) = &skin.source_path {
         dirs.push(PathBuf::from(source).join("assets"));
         dirs.push(PathBuf::from(source));
     }
-    let home = super::manager::get_user_skins_dir()
-        .join(&skin.manifest.id)
-        .join("assets");
-    dirs.push(home);
-    dirs.push(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("skins")
-            .join(&skin.manifest.id)
-            .join("assets"),
-    );
+    let bundled = paths.bundled_skin_dir(&skin.manifest.id);
+    dirs.push(bundled.join("assets"));
+    dirs.push(bundled);
+    dirs.push(paths.user_root.join(&skin.manifest.id).join("assets"));
+    dirs.push(paths.user_root.join(&skin.manifest.id));
     dirs
 }
 
@@ -307,6 +294,10 @@ fn ensure_data_url(value: &str) -> String {
 mod tests {
     use super::*;
     use crate::skin::models::{SkinConfig, SkinManifest};
+
+    fn fixture_paths() -> crate::skin::paths::SkinPaths {
+        crate::skin::paths::source_tree_paths()
+    }
 
     fn sample(id: &str, mode: &str, tokens: Option<SkinTokens>) -> Skin {
         Skin {
@@ -360,7 +351,11 @@ mod tests {
     fn compile_embeds_tokens_and_kernel() {
         let mut tokens = SkinTokens::dark("#00f0ff");
         tokens.bg = "#070913".into();
-        let payload = compile(&sample("builtin-cyberpunk", "dark", Some(tokens))).unwrap();
+        let payload = compile(
+            &sample("builtin-cyberpunk", "dark", Some(tokens)),
+            &fixture_paths(),
+        )
+        .unwrap();
         assert!(payload.css.contains("--wb-bg: #070913"));
         assert!(payload.css.contains("--wb-accent: #00f0ff"));
         assert!(payload.css.contains(".conversation-sidebar"));
@@ -384,11 +379,12 @@ mod tests {
 
     #[test]
     fn jingtian_compiles_light_first_with_home_layout() {
-        let skin = crate::skin::manager::get_builtin_skins()
+        let paths = fixture_paths();
+        let skin = crate::skin::manager::get_builtin_skins(&paths)
             .into_iter()
             .find(|s| s.manifest.id == "jingtian-starlight")
             .expect("jingtian builtin");
-        let payload = compile(&skin).unwrap();
+        let payload = compile(&skin, &paths).unwrap();
         assert!(!payload.force_dark);
         assert!(payload.css.contains("--wb-color-scheme: light"));
         assert!(!payload.css.contains("padding-bottom: 220px"));
@@ -426,11 +422,14 @@ mod tests {
 
     #[test]
     fn apply_script_assigns_payload() {
-        let payload = compile(&sample(
-            "builtin-frosted-glass",
-            "dark",
-            Some(SkinTokens::dark("#38bdf8")),
-        ))
+        let payload = compile(
+            &sample(
+                "builtin-frosted-glass",
+                "dark",
+                Some(SkinTokens::dark("#38bdf8")),
+            ),
+            &fixture_paths(),
+        )
         .unwrap();
         let js = apply_script(&payload).unwrap();
         assert!(js.contains("window.__WB_SKIN_PAYLOAD"));

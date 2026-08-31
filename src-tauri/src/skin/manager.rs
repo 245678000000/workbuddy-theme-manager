@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use super::models::{Skin, SkinConfig, SkinManifest, SkinTokens};
+use super::paths::SkinPaths;
 
 pub fn get_user_skins_dir() -> PathBuf {
     let base = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
@@ -33,11 +34,10 @@ fn validate_custom_skin_id(skin_id: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn custom_skin_dir(skin_id: &str) -> Result<PathBuf, String> {
+fn custom_skin_dir(user_root: &Path, skin_id: &str) -> Result<PathBuf, String> {
     validate_custom_skin_id(skin_id)?;
-    let root = get_user_skins_dir();
-    let candidate = root.join(skin_id);
-    if candidate.parent() != Some(root.as_path()) {
+    let candidate = user_root.join(skin_id);
+    if candidate.parent() != Some(user_root) {
         return Err("皮肤目录越出本地皮肤库".into());
     }
     Ok(candidate)
@@ -91,21 +91,12 @@ fn builtin(
         config,
         preview_data_url: None,
         is_builtin: true,
-        source_path: if id == "jingtian-starlight" {
-            Some(
-                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                    .join("skins/jingtian-starlight")
-                    .to_string_lossy()
-                    .to_string(),
-            )
-        } else {
-            None
-        },
+        source_path: None,
         tokens: Some(tokens),
     }
 }
 
-pub fn get_builtin_skins() -> Vec<Skin> {
+pub fn get_builtin_skins(paths: &SkinPaths) -> Vec<Skin> {
     let jingtian_tokens = SkinTokens {
         bg: "#E8E4FF".into(),
         surface: "#FFFFFF".into(),
@@ -184,7 +175,7 @@ pub fn get_builtin_skins() -> Vec<Skin> {
     parchment.bubble_assistant = "#ffffff".into();
     parchment.font_family = Some("Georgia, 'Songti SC', serif".into());
 
-    vec![
+    let mut skins = vec![
         builtin(
             "builtin-default",
             "官方原味 (Stock Native)",
@@ -274,13 +265,21 @@ pub fn get_builtin_skins() -> Vec<Skin> {
                 custom_css: None,
             },
         ),
-    ]
+    ];
+
+    for skin in &mut skins {
+        let dir = paths.bundled_skin_dir(&skin.manifest.id);
+        if dir.is_dir() {
+            skin.source_path = Some(dir.to_string_lossy().to_string());
+        }
+    }
+    skins
 }
 
-pub fn list_all_skins() -> Vec<Skin> {
-    let mut skins = get_builtin_skins();
+pub fn list_all_skins(paths: &SkinPaths) -> Vec<Skin> {
+    let mut skins = get_builtin_skins(paths);
     let mut seen: HashSet<String> = skins.iter().map(|s| s.manifest.id.clone()).collect();
-    let user_dir = get_user_skins_dir();
+    let user_dir = &paths.user_root;
 
     if let Ok(entries) = fs::read_dir(user_dir) {
         for entry in entries.flatten() {
@@ -340,13 +339,14 @@ pub fn list_all_skins() -> Vec<Skin> {
     skins
 }
 
-pub fn find_skin(skin_id: &str) -> Option<Skin> {
-    list_all_skins()
+pub fn find_skin(paths: &SkinPaths, skin_id: &str) -> Option<Skin> {
+    list_all_skins(paths)
         .into_iter()
         .find(|s| s.manifest.id == skin_id)
 }
 
 pub fn save_custom_skin_to_disk(
+    paths: &SkinPaths,
     name: &str,
     description: &str,
     theme_mode: &str,
@@ -355,7 +355,7 @@ pub fn save_custom_skin_to_disk(
     config: &SkinConfig,
 ) -> Result<Skin, String> {
     let skin_id = format!("custom-{}", &uuid::Uuid::new_v4().to_string()[0..8]);
-    let user_dir = get_user_skins_dir().join(&skin_id);
+    let user_dir = paths.user_skin_dir(&skin_id);
 
     fs::create_dir_all(&user_dir).map_err(|e| format!("创建皮肤目录失败: {e}"))?;
 
@@ -394,8 +394,8 @@ pub fn save_custom_skin_to_disk(
     })
 }
 
-pub fn delete_custom_skin_from_disk(skin_id: &str) -> Result<(), String> {
-    let user_dir = custom_skin_dir(skin_id)?;
+pub fn delete_custom_skin_from_disk(paths: &SkinPaths, skin_id: &str) -> Result<(), String> {
+    let user_dir = custom_skin_dir(&paths.user_root, skin_id)?;
     if user_dir.exists() {
         fs::remove_dir_all(user_dir).map_err(|e| format!("删除皮肤目录失败: {e}"))?;
     }
