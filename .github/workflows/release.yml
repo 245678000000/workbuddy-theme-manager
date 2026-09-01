@@ -19,7 +19,7 @@ jobs:
           - platform: 'macos-13'
             args: '--target x86_64-apple-darwin'
           - platform: 'windows-latest'
-            args: ''
+            args: '--bundles nsis'
 
     runs-on: ${{ matrix.platform }}
     steps:
