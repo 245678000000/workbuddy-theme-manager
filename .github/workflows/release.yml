@@ -4,9 +4,10 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
-  build-and-release:
+  release:
     permissions:
       contents: write
     strategy:
@@ -28,33 +29,30 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 9
+          run_install: false
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build Tauri App & Bundles
-        run: pnpm tauri build ${{ matrix.args }}
-
-      - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-          files: |
-            src-tauri/target/**/release/bundle/dmg/*.dmg
-            src-tauri/target/**/release/bundle/macos/*.app.tar.gz
-            src-tauri/target/**/release/bundle/nsis/*.exe
-            src-tauri/target/**/release/bundle/msi/*.msi
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || matrix.platform == 'macos-13' && 'x86_64-apple-darwin' || '' }}
+
+      - name: Install frontend dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build and Publish Tauri Application
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'WorkBuddy 皮肤管理器 ${{ github.ref_name }}'
+          releaseBody: '### 🎉 WorkBuddy 皮肤与主题管理器 ${{ github.ref_name }} 发布\n\n- 跨平台原生支持：macOS (Apple Silicon / Intel) 与 Windows (x64)\n- 非侵入式热换肤与 CDP 协议即时注入\n- 内置精选主题与可视化微调器'
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

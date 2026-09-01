@@ -1,6 +1,6 @@
 [package]
 name = "workbuddy-skin-manager"
-version = "1.0.1"
+version = "1.0.2"
 description = "WorkBuddy Desktop Skin & Theme Manager"
 authors = ["Antigravity"]
 edition = "2021"
