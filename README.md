@@ -11,7 +11,7 @@
   <a href="https://github.com/245678000000/workbuddy-theme-manager/releases">
     <img src="https://img.shields.io/github/v/release/245678000000/workbuddy-theme-manager?style=flat-square&label=Release" alt="Latest Release" />
   </a>
-  <img src="https://img.shields.io/badge/Platform-macOS-blue?style=flat-square" alt="Platform Support" />
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue?style=flat-square" alt="Platform Support" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
 </p>
 
@@ -33,6 +33,7 @@
 
 ## 核心特性
 
+- **跨平台原生支持**：深度适配 **macOS**（Apple Silicon & Intel）与 **Windows**（Windows 10 / 11 64-bit）桌面系统。
 - **非侵入式热换肤**：基于 Chrome DevTools Protocol（CDP）向运行中的 WorkBuddy 页面会话注入 CSS/Tokens，不修改客户端本体文件，不破坏官方代码签名。
 - **即时生效无需重启**：在客户端运行过程中实时切换、调试与注入主题皮肤，零延迟刷新。
 - **一键安全还原**：提供原生样式还原机制，一键卸载注入图层，恢复官方默认外观。
@@ -41,7 +42,7 @@
   - 管理器自身支持浅色、深色及跟随操作系统三态外观模式切换。
 - **可视化微调器**：支持强调色提取、主透明度、毛玻璃模糊度（含 0px 极简模式）、自定义壁纸上传与 CSS 实时热载入。
 - **自动检测更新**：集成 GitHub Releases API，支持启动时静默检查与手动检查，提供更新日志展示与一键安装引导。
-- **GitHub Actions 自动构建**：提供完备的 CI/CD 发布流水线，推送 Git 标签即可自动编译全架构 macOS 安装镜像并发布 Release。
+- **GitHub Actions 自动构建**：提供完备的 CI/CD 发布流水线，推送 Git 标签即可自动编译全平台 macOS DMG 与 Windows EXE/MSI 安装包并发布 Release。
 
 ---
 
@@ -73,12 +74,20 @@
 
 ### 下载安装包
 
-访问 [GitHub Releases](https://github.com/245678000000/workbuddy-theme-manager/releases) 下载最新的 macOS 安装镜像：
+访问 [GitHub Releases](https://github.com/245678000000/workbuddy-theme-manager/releases) 下载适合您操作系统的最新安装包：
 
-- Apple Silicon 架构：`WorkBuddy 皮肤管理器_1.0.0_aarch64.dmg`
-- Intel 架构：`WorkBuddy 皮肤管理器_1.0.0_x64.dmg`
+#### 🍏 macOS
+- Apple Silicon (M1/M2/M3/M4)：`WorkBuddy-Skin-Manager-v1.0.0-macOS-arm64.dmg`
+- Intel 芯片：`WorkBuddy-Skin-Manager-v1.0.0-macOS-x64.dmg`
+- 免安装绿色包：`WorkBuddy-Skin-Manager-v1.0.0-macOS-arm64.zip`
 
-下载后打开 DMG 镜像，将应用拖拽至 `Applications`（应用程序）文件夹即可。
+> 下载后打开 DMG 镜像，将应用拖拽至 `Applications`（应用程序）文件夹即可。
+
+#### 🪟 Windows
+- 64 位安装包：`WorkBuddy-Skin-Manager-Setup-x64.exe`
+- MSI 安装包：`WorkBuddy-Skin-Manager-x64.msi`
+
+> 双击安装程序按照向导完成安装，桌面将自动生成快捷方式。
 
 ---
 
@@ -89,7 +98,7 @@
 - Node.js >= 18
 - pnpm >= 9
 - Rust 稳定版 (2021 edition) 与 Cargo
-- macOS 开发环境
+- 操作系统：macOS (macOS 12+) 或 Windows (Windows 10/11 64-bit)
 
 ### 1. 安装依赖
 
@@ -142,7 +151,7 @@ pnpm check
 git push origin main --tags
 ```
 
-推送完成后，GitHub Actions 会自动在云端编译各平台安装包并创建 Release，所有客户端将自动检测到该更新。
+推送完成后，GitHub Actions 会自动在云端编译各平台（macOS / Windows）安装包并创建 Release，所有客户端将自动检测到该更新。
 
 ---
 
