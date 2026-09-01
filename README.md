@@ -15,6 +15,20 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
 </p>
 
+<p align="center">
+  <img src="docs/images/manager-ui.png" alt="WorkBuddy 皮肤管理器界面预览" width="85%" />
+</p>
+
+---
+
+## 实装效果展示
+
+### 「景甜 · STARLIGHT 星蝶光廊」浅色陪伴主题
+
+| 首页极光星蝶效果 | 任务会话半透明毛玻璃效果 |
+| :---: | :---: |
+| ![首页实装效果](docs/images/skin-preview-home.png) | ![会话实装效果](docs/images/skin-preview-chat.png) |
+
 ---
 
 ## 核心特性
@@ -34,23 +48,23 @@
 ## 系统架构
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│                  WorkBuddy 皮肤与主题管理器                    │
-│                                                              │
-│  ┌───────────────────────┐        ┌───────────────────────┐  │
-│  │   React 19 前端界面   │        │     Tauri v2 后端     │  │
-│  │  - 主题画廊 (Gallery) │  IPC   │  - 进程探测与守护器   │  │
-│  │  - 可视化微调器       │───────▶│  - 皮肤编译器 (Tokens)│  │
-│  │  - 更新弹窗 (Updater) │        │  - GitHub 更新检测器  │  │
-│  └───────────────────────┘        └──────────┬────────────┘  │
-└──────────────────────────────────────────────┼───────────────┘
-                                               │ CDP (WebSocket)
-                                               │ 端口 9333
-                                               ▼
-                                    ┌───────────────────────┐
-                                    │  WorkBuddy 桌面客户端 │
-                                    │  (运行时页面 DOM 注入) │
-                                    └───────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                 WorkBuddy Skin & Theme Manager              │
+│                                                             │
+│  ┌─────────────────────────┐       ┌─────────────────────┐  │
+│  │     React 19 Frontend   │       │   Tauri v2 / Rust   │  │
+│  │  - Theme Gallery UI     │  IPC  │  - Process Detector │  │
+│  │  - Visual Customizer    │──────▶│  - Skin Compiler    │  │
+│  │  - GitHub Auto Updater  │       │  - CDP Session Mgr  │  │
+│  └─────────────────────────┘       └──────────┬──────────┘  │
+└───────────────────────────────────────────────┼─────────────┘
+                                                │ CDP (WebSocket)
+                                                │ Port 9333
+                                                ▼
+                                     ┌─────────────────────┐
+                                     │ WorkBuddy Desktop   │
+                                     │ (Runtime DOM Inject)│
+                                     └─────────────────────┘
 ```
 
 ---
