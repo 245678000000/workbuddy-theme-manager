@@ -1,120 +1,139 @@
-# WorkBuddy 皮肤与主题管理器 (WorkBuddy Skin Manager)
+<h1 align="center">WorkBuddy 皮肤与主题管理器</h1>
 
-一款专为腾讯 **WorkBuddy** 桌面客户端打造的轻量级皮肤与主题热换肤管理工具。
+<p align="center">
+  专为 WorkBuddy 桌面客户端打造的非侵入式热换肤与主题管理工具
+</p>
 
-本项目参考了 `Codex-App-Manager` 的非侵入式热换肤架构，采用 **Tauri v2 + Rust + React 19** 构建。当前发布门槛是 **macOS**；Windows / Linux 源码保持兼容，但尚未经过原生主机验证。
-
----
-
-## 已实现能力
-
-- 🎨 **非侵入式热换肤**：基于 Chrome DevTools Protocol（CDP）向管理器自己启动的 WorkBuddy 会话注入 CSS/JavaScript，**不修改 WorkBuddy 任何本体文件，不破坏官方代码签名**。
-- ⚡ **运行中切换**：WorkBuddy 运行过程中可切换皮肤，无需重启客户端。
-- 🛡️ **一键安全还原**：清除管理器注入的样式与图层，恢复官方原生外观。
-- 🌈 **精选预设与官方模式**：
-  - **景甜 · STARLIGHT 星蝶光廊**：浅色陪伴主题，含打包壁纸与立绘资源。
-  - **官方原味 · 深色 (Stock Dark)**：经典深色官方原生设计。
-  - **官方原味 · 浅色 (Stock Light)**：纯净浅色官方原生设计。
-  - **官方原味 · 跟随系统 (Stock Auto)**：自适应操作系统的明暗模式。
-- 🔄 **自动检测更新**：集成 GitHub Releases API，支持启动时静默检测与手动检测，展示更新日志并一键跳转下载最新安装包。
-- 🤖 **GitHub CI/CD 自动发布**：包含 `.github/workflows/release.yml`，推送 Git Tag 即可自动编译并发布多平台安装包。
-- 🎛️ **可视化微调器**：强调色、透明度、毛玻璃模糊度（含 `0px`）、自定义壁纸上传、字体族，以及只保存一份的自定义 CSS。
-- 💾 **本地自定义皮肤**：保存到 `~/.workbuddy-skins/`，可在管理器内原地保存与另存为。
-
-## 计划中（尚未实现）
-
-以下能力在命令、校验、体积限制、路径穿越保护和界面流程完成前，**不可用**：
-
-- `.wbskin` 皮肤包导入 / 导出 / 分享
-- Windows / Linux 原生主机验收
-- 跨 WorkBuddy 版本的选择器兼容矩阵
-
-详见 `docs/SECURITY.md` 与 `docs/RELEASE_CHECKLIST.md`。
+<p align="center">
+  <a href="https://github.com/245678000000/workbuddy-theme-manager/actions/workflows/release.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/245678000000/workbuddy-theme-manager/release.yml?style=flat-square&label=Build%20%26%20Release" alt="Build Status" />
+  </a>
+  <a href="https://github.com/245678000000/workbuddy-theme-manager/releases">
+    <img src="https://img.shields.io/github/v/release/245678000000/workbuddy-theme-manager?style=flat-square&label=Release" alt="Latest Release" />
+  </a>
+  <img src="https://img.shields.io/badge/Platform-macOS-blue?style=flat-square" alt="Platform Support" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
+</p>
 
 ---
 
-## GitHub 发布与持续更新指南
+## 核心特性
 
-当你将本项目推送到 GitHub 后，只需以下简单步骤即可发布新版本：
-
-### 1. 运行一键版本发布脚本
-```bash
-./scripts/release.sh 1.0.1
-```
-脚本会自动运行全套门禁测试，并同步递增 `package.json`、`Cargo.toml`、`tauri.conf.json` 中的版本号，创建 Git Tag `v1.0.1`。
-
-### 2. 推送到 GitHub 仓库
-```bash
-git push origin main --tags
-```
-GitHub Actions 会自动触发云端流水线，编译 Apple Silicon 与 Intel 架构的 DMG 安装包并创建 Release。客户端将自动检测到新版本并弹窗提示用户一键更新！
+- **非侵入式热换肤**：基于 Chrome DevTools Protocol（CDP）向运行中的 WorkBuddy 页面会话注入 CSS/Tokens，不修改客户端本体文件，不破坏官方代码签名。
+- **即时生效无需重启**：在客户端运行过程中实时切换、调试与注入主题皮肤，零延迟刷新。
+- **一键安全还原**：提供原生样式还原机制，一键卸载注入图层，恢复官方默认外观。
+- **主题外观适配**：
+  - 内置精选主题预设（如「景甜 · STARLIGHT 星蝶光廊」与「官方原生」）；
+  - 管理器自身支持浅色、深色及跟随操作系统三态外观模式切换。
+- **可视化微调器**：支持强调色提取、主透明度、毛玻璃模糊度（含 0px 极简模式）、自定义壁纸上传与 CSS 实时热载入。
+- **自动检测更新**：集成 GitHub Releases API，支持启动时静默检查与手动检查，提供更新日志展示与一键安装引导。
+- **GitHub Actions 自动构建**：提供完备的 CI/CD 发布流水线，推送 Git 标签即可自动编译全架构 macOS 安装镜像并发布 Release。
 
 ---
 
-## 项目架构
+## 系统架构
 
-```
-workbuddy-theme/
-├── src-tauri/                 # Rust 核心后端 (Tauri v2)
-│   ├── src/
-│   │   ├── cdp/               # 有所有权的 CDP 会话与注入引擎
-│   │   ├── process/           # 已验证 PID 的 WorkBuddy 探测与启停
-│   │   ├── skin/              # 皮肤模型、打包资源路径与本地库
-│   │   ├── commands.rs
-│   │   └── lib.rs
-│   └── tauri.conf.json
-│
-├── src/                       # React 19 + TypeScript + Tailwind 前端
-│   ├── components/
-│   ├── types/
-│   ├── utils/
-│   └── App.tsx
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                  WorkBuddy 皮肤与主题管理器                    │
+│                                                              │
+│  ┌───────────────────────┐        ┌───────────────────────┐  │
+│  │   React 19 前端界面   │        │     Tauri v2 后端     │  │
+│  │  - 主题画廊 (Gallery) │  IPC   │  - 进程探测与守护器   │  │
+│  │  - 可视化微调器       │───────▶│  - 皮肤编译器 (Tokens)│  │
+│  │  - 更新弹窗 (Updater) │        │  - GitHub 更新检测器  │  │
+│  └───────────────────────┘        └──────────┬────────────┘  │
+└──────────────────────────────────────────────┼───────────────┘
+                                               │ CDP (WebSocket)
+                                               │ 端口 9333
+                                               ▼
+                                    ┌───────────────────────┐
+                                    │  WorkBuddy 桌面客户端 │
+                                    │  (运行时页面 DOM 注入) │
+                                    └───────────────────────┘
 ```
 
 ---
 
-## 快速开始
+## 快速安装与使用
+
+### 下载安装包
+
+访问 [GitHub Releases](https://github.com/245678000000/workbuddy-theme-manager/releases) 下载最新的 macOS 安装镜像：
+
+- Apple Silicon 架构：`WorkBuddy 皮肤管理器_1.0.0_aarch64.dmg`
+- Intel 架构：`WorkBuddy 皮肤管理器_1.0.0_x64.dmg`
+
+下载后打开 DMG 镜像，将应用拖拽至 `Applications`（应用程序）文件夹即可。
+
+---
+
+## 本地开发指南
+
+### 前置环境
+
+- Node.js >= 18
+- pnpm >= 9
+- Rust 稳定版 (2021 edition) 与 Cargo
+- macOS 开发环境
 
 ### 1. 安装依赖
+
 ```bash
 pnpm install
 ```
 
-### 2. 启动前端与调试预览
+### 2. 启动前端预览（Mock 模式）
+
 ```bash
 pnpm dev
 ```
-浏览器打开 `http://localhost:1420` 即可预览界面。浏览器预览使用 mock 数据，不会连接真实 WorkBuddy。
 
-### 3. 启动桌面端应用程序
+在浏览器访问 `http://localhost:1420` 即可预览 UI 界面（Mock 环境下不会连接真实 WorkBuddy 进程）。
+
+### 3. 启动桌面端开发服务
+
 ```bash
 pnpm tauri dev
 ```
 
-### 4. 构建生产安装包
-```bash
-pnpm tauri build -b app --no-sign
-```
-macOS 产物在 `src-tauri/target/release/bundle/macos/`。签名、公证和跨平台安装包不在当前范围内。
-
----
-
-## 使用指南
-
-1. 打开本管理器，点击右上角 **「启动 WorkBuddy」**。管理器只会在调试端口 **9333** 空闲、且本机没有已验证的 WorkBuddy 进程时启动客户端，并附加 `--remote-debugging-port=9333`。
-2. 右上角指示灯变为 **「CDP 调试端口已连接」** 后，才允许注入。已被其他进程占用的 9333 会被拒绝。
-3. 在画廊中点击 **「一键应用」**。样式注入到管理器拥有的页面目标；部分失败会报错，不会假装成功。
-4. 卡片右下角的调节图标可进行强调色、透明度、模糊度和自定义 CSS 微调，并保存为本地自定义皮肤。
-5. **「安全还原原生」** 会清除管理器注入。若还原失败，当前皮肤 ID 会保留以便重试。
-
----
-
-## 验证
-
-日常：
+### 4. 运行全栈质量门禁
 
 ```bash
 pnpm check
 ```
 
-发版前按 `docs/RELEASE_CHECKLIST.md` 执行自动化门禁和（如可行）消毒后的真实 WorkBuddy 验收。
+该命令将严格执行 TypeScript 类型检查、Vitest 前端单元测试、Rust Cargo 单元测试以及 Vite 生产构建。
+
+---
+
+## 使用步骤
+
+1. 打开「WorkBuddy 皮肤管理器」，点击右上角 **「启动 WorkBuddy」**。管理器将在 9333 端口空闲时启动 WorkBuddy 并附加 `--remote-debugging-port=9333`。
+2. 待右上角指示状态变为 **「CDP 已连接」** 后，在下方画廊中选择喜欢的主题，点击 **「一键应用」** 即可瞬间换肤。
+3. 可点击皮肤卡片右下角的调节图标，进入微调器调节色彩、壁纸与毛玻璃参数，支持「保存修改」或「另存为新皮肤」。
+4. 点击右上角 **「还原原生」** 可随时清空注入的自定义样式，安全恢复官方原生界面。
+
+---
+
+## GitHub 发布与持续更新
+
+本项目已配置 GitHub Actions 自动构建流水线（`.github/workflows/release.yml`）。发布新版本只需以下步骤：
+
+```bash
+# 1. 运行一键版本自增与门禁脚本（以 1.0.1 为例）
+./scripts/release.sh 1.0.1
+
+# 2. 推送代码与标签至 GitHub
+git push origin main --tags
+```
+
+推送完成后，GitHub Actions 会自动在云端编译各平台安装包并创建 Release，所有客户端将自动检测到该更新。
+
+---
+
+## 许可证与免责声明
+
+本项目采用 [MIT License](LICENSE) 开源协议。
+
+**免责声明**：本项目为独立开源工具，通过官方支持的 Chromium 调试协议（CDP）在本地内存中注入样式，不包含任何对 WorkBuddy 安装包本体文件的篡改与破解行为。
