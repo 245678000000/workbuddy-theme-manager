@@ -11,27 +11,43 @@
 - 🎨 **非侵入式热换肤**：基于 Chrome DevTools Protocol（CDP）向管理器自己启动的 WorkBuddy 会话注入 CSS/JavaScript，**不修改 WorkBuddy 任何本体文件，不破坏官方代码签名**。
 - ⚡ **运行中切换**：WorkBuddy 运行过程中可切换皮肤，无需重启客户端。
 - 🛡️ **一键安全还原**：清除管理器注入的样式与图层，恢复官方原生外观。
-- 🌈 **内置精选预设**：
+- 🌈 **精选预设与官方模式**：
   - **景甜 · STARLIGHT 星蝶光廊**：浅色陪伴主题，含打包壁纸与立绘资源。
-  - **赛博霓虹 (Cyberpunk Neon)**：高对比深黑底色 + 青荧紫粉霓虹。
-  - **深空毛玻璃 (Frosted Glass)**：透亮半透明质感 + 多层环境光晕。
-  - **温润羊皮纸 (Warm Parchment)**：低疲劳护眼书卷米黄质感。
-  - **VS Code 极客暗黑 (Dark+ Pro)**：经典开发者纯黑灰度工作台。
-  - **官方原味 (Stock Native)**：一键还原官方原生配色。
-- 🎛️ **可视化微调器**：强调色、透明度、毛玻璃模糊度（含 `0px`）、字体族，以及只保存一份的自定义 CSS。
-- 💾 **本地自定义皮肤**：保存到 `~/.workbuddy-skins/`，可在管理器内删除。
+  - **官方原味 · 深色 (Stock Dark)**：经典深色官方原生设计。
+  - **官方原味 · 浅色 (Stock Light)**：纯净浅色官方原生设计。
+  - **官方原味 · 跟随系统 (Stock Auto)**：自适应操作系统的明暗模式。
+- 🔄 **自动检测更新**：集成 GitHub Releases API，支持启动时静默检测与手动检测，展示更新日志并一键跳转下载最新安装包。
+- 🤖 **GitHub CI/CD 自动发布**：包含 `.github/workflows/release.yml`，推送 Git Tag 即可自动编译并发布多平台安装包。
+- 🎛️ **可视化微调器**：强调色、透明度、毛玻璃模糊度（含 `0px`）、自定义壁纸上传、字体族，以及只保存一份的自定义 CSS。
+- 💾 **本地自定义皮肤**：保存到 `~/.workbuddy-skins/`，可在管理器内原地保存与另存为。
 
 ## 计划中（尚未实现）
 
 以下能力在命令、校验、体积限制、路径穿越保护和界面流程完成前，**不可用**：
 
 - `.wbskin` 皮肤包导入 / 导出 / 分享
-- 用户上传壁纸与图片尺寸控制
-- 自动更新、签名与公证
 - Windows / Linux 原生主机验收
 - 跨 WorkBuddy 版本的选择器兼容矩阵
 
 详见 `docs/SECURITY.md` 与 `docs/RELEASE_CHECKLIST.md`。
+
+---
+
+## GitHub 发布与持续更新指南
+
+当你将本项目推送到 GitHub 后，只需以下简单步骤即可发布新版本：
+
+### 1. 运行一键版本发布脚本
+```bash
+./scripts/release.sh 1.0.1
+```
+脚本会自动运行全套门禁测试，并同步递增 `package.json`、`Cargo.toml`、`tauri.conf.json` 中的版本号，创建 Git Tag `v1.0.1`。
+
+### 2. 推送到 GitHub 仓库
+```bash
+git push origin main --tags
+```
+GitHub Actions 会自动触发云端流水线，编译 Apple Silicon 与 Intel 架构的 DMG 安装包并创建 Release。客户端将自动检测到新版本并弹窗提示用户一键更新！
 
 ---
 

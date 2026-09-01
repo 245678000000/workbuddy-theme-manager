@@ -389,7 +389,10 @@ mod tests {
         assert!(payload.css.contains("--wb-color-scheme: light"));
         assert!(!payload.css.contains("padding-bottom: 220px"));
         assert!(payload.css.contains("wb-home-page__main-content"));
-        assert!(payload.css.contains("min(36vw, 340px)"));
+        assert!(
+            !payload.css.contains("min(36vw, 340px)"),
+            "home content must not shrink to leave a portrait gutter"
+        );
         assert!(payload.css.contains("wb-portrait-chat"));
         assert!(payload.css.contains("night-owl-assets"));
         assert!(payload.css.contains("linear-gradient"));
@@ -403,8 +406,10 @@ mod tests {
             "home route must be punched through so wallpaper and portrait show"
         );
         assert!(
-            !payload.css.contains("#wb-skin-portraits {\n  z-index: 0;"),
-            "jingtian must not bury portraits under #root"
+            payload
+                .css
+                .contains("#wb-skin-portraits {\n  position: fixed;\n  inset: 0;\n  z-index: 0;"),
+            "portraits must sit behind #root so text is not covered"
         );
         assert!(
             STAGE_JS.contains("conversation-page-chrome"),
@@ -415,8 +420,43 @@ mod tests {
             "scene detection must see the message list, not default every task to home"
         );
         assert!(
-            payload.css.contains("conversation-input-area"),
-            "chat composer must leave a gutter so the portrait does not cover text"
+            !payload.css.contains("calc(100% - min(34vw, 380px))"),
+            "chat composer must keep native width instead of shrinking for the portrait"
+        );
+        assert!(
+            !payload.css.contains("font-weight: 650"),
+            "650 is not a PingFang face; Chromium synthesizes it as a double glyph"
+        );
+        assert!(
+            !payload.css.contains("letter-spacing: -0.03em"),
+            "negative tracking collides CJK glyphs on the home title and chips"
+        );
+        assert!(
+            payload.css.contains("font-synthesis: none"),
+            "custom font stacks must not synthesize fake CJK bold"
+        );
+        assert!(
+            payload.css.contains("\"SF Pro Text\", \"PingFang SC\""),
+            "multi-word font names must be quoted or CJK fallback never attaches"
+        );
+        assert!(
+            payload
+                .css
+                .contains("html[data-wb-skin=\"jingtian-starlight\"] .wb-home-page-header-pc")
+                && payload
+                    .css
+                    .contains("html[data-wb-skin=\"jingtian-starlight\"] .wb-home-header"),
+            "home header frost must be opt-out so nested backdrop-filter does not double-paint text"
+        );
+        assert!(
+            payload
+                .css
+                .contains("padding-bottom: var(--wb-home-slot-reserve, 220px)"),
+            "main-content must keep native playbook reserve or the input footer overlaps the playbooks heading"
+        );
+        assert!(
+            !payload.css.contains("bottom: 16px !important"),
+            "must not pin related playbooks over the composer footer"
         );
     }
 

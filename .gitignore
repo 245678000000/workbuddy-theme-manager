@@ -7,3 +7,6 @@ dist/
 src-tauri/target/
 coverage/
 *.wbskin
+.workbuddy-skins/
+docs/analysis/
+wechat-md/

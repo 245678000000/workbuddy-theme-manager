@@ -68,6 +68,21 @@
       html.style.colorScheme = nativeIsLight() ? "light" : "dark";
       return;
     }
+    if (payload.skinId === "builtin-system") {
+      if (window[SNAP_KEY]) restoreThemeSnapshot();
+      syncNativeTheme();
+      html.style.colorScheme = nativeIsLight() ? "light" : "dark";
+      return;
+    }
+    if (payload.skinId === "builtin-light" || (!payload.forceDark && payload.themeMode === "light")) {
+      snapshotTheme();
+      html.className = swapLight(html.className);
+      html.setAttribute("data-theme", "light");
+      html.style.colorScheme = "light";
+      if (document.body) document.body.className = swapLight(document.body.className);
+      html.setAttribute("data-wb-native-theme", "light");
+      return;
+    }
     if (!payload.forceDark) {
       if (window[SNAP_KEY]) restoreThemeSnapshot();
       syncNativeTheme();

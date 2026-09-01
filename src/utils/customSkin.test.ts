@@ -37,6 +37,15 @@ describe('buildCustomSkin', () => {
     expect(result.cssContent).toContain('.conversation-sidebar');
     expect(result.cssContent).toContain('.main-content');
   });
+
+  it('correctly maps custom wallpaper image', () => {
+    const result = buildCustomSkin({
+      ...sampleInput,
+      bgImageBase64: 'data:image/webp;base64,ABC123XYZ',
+    });
+    expect(result.config.bg_image_base64).toBe('data:image/webp;base64,ABC123XYZ');
+    expect(result.cssContent).toContain('url("data:image/webp;base64,ABC123XYZ")');
+  });
 });
 
 describe('previewCustomSkin', () => {

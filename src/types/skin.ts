@@ -4,7 +4,7 @@ export interface SkinManifest {
   version: string;
   author: string;
   description: string;
-  themeMode: 'dark' | 'light';
+  themeMode: 'dark' | 'light' | 'auto';
   accentColor: string;
   targetVersion?: string;
 }
@@ -43,4 +43,14 @@ export interface WorkBuddyStatus {
   cdp_connected: boolean;
   debugging_port: number;
   pid?: number;
+}
+
+export interface UpdateInfo {
+  has_update: boolean;
+  current_version: string;
+  latest_version: string;
+  release_notes?: string;
+  release_url?: string;
+  download_url?: string;
+  published_at?: string;
 }

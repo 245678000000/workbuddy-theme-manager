@@ -138,8 +138,8 @@ pub async fn reset_css_on_all_targets(session: &Mutex<CdpSessionState>) -> Resul
 fn force_dark_from_theme_mode(theme_mode: &str) -> Result<bool, String> {
     match theme_mode {
         "dark" => Ok(true),
-        "light" => Ok(false),
-        _ => Err("theme_mode 必须是 dark 或 light".into()),
+        "light" | "auto" => Ok(false),
+        _ => Err("theme_mode 必须是 dark、light 或 auto".into()),
     }
 }
 
@@ -232,7 +232,8 @@ mod tests {
     #[test]
     fn raw_preview_preserves_light_theme_mode() {
         assert!(!force_dark_from_theme_mode("light").unwrap());
+        assert!(!force_dark_from_theme_mode("auto").unwrap());
         assert!(force_dark_from_theme_mode("dark").unwrap());
-        assert!(force_dark_from_theme_mode("auto").is_err());
+        assert!(force_dark_from_theme_mode("unknown").is_err());
     }
 }

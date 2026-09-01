@@ -2,6 +2,7 @@ pub mod cdp;
 pub mod commands;
 pub mod process;
 pub mod skin;
+pub mod updater;
 
 use std::sync::Mutex;
 
@@ -31,7 +32,9 @@ pub fn run() {
             get_skins,
             get_active_skin_id,
             save_custom_skin,
-            delete_custom_skin
+            delete_custom_skin,
+            check_update,
+            open_external_url
         ])
         .run(tauri::generate_context!())
         .expect("运行 Tauri 应用程序时发生错误");

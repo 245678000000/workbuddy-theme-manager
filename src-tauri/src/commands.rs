@@ -103,6 +103,7 @@ pub fn get_skins(paths: State<'_, SkinPaths>) -> Vec<Skin> {
 
 #[command]
 pub fn save_custom_skin(
+    skin_id: Option<String>,
     name: String,
     description: String,
     theme_mode: String,
@@ -113,6 +114,7 @@ pub fn save_custom_skin(
 ) -> Result<Skin, String> {
     save_custom_skin_to_disk(
         &paths,
+        skin_id.as_deref(),
         &name,
         &description,
         &theme_mode,
@@ -125,4 +127,17 @@ pub fn save_custom_skin(
 #[command]
 pub fn delete_custom_skin(skin_id: String, paths: State<'_, SkinPaths>) -> Result<(), String> {
     delete_custom_skin_from_disk(&paths, &skin_id)
+}
+
+#[command]
+pub async fn check_update(
+    custom_repo: Option<String>,
+) -> Result<crate::updater::UpdateInfo, String> {
+    let current_version = env!("CARGO_PKG_VERSION");
+    crate::updater::check_github_update(custom_repo.as_deref(), current_version).await
+}
+
+#[command]
+pub fn open_external_url(url: String) -> Result<(), String> {
+    crate::updater::open_url_in_browser(&url)
 }

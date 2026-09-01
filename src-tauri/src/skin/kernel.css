@@ -20,7 +20,7 @@
 #wb-skin-portraits {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -228,6 +228,7 @@ html[data-wb-skin] [class*="accent"] {
 html[data-wb-skin] body,
 html[data-wb-skin] #root {
   font-family: var(--wb-font, inherit) !important;
+  font-synthesis: none;
 }
 
 html[data-wb-skin] ::selection {

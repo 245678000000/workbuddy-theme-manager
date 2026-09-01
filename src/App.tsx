@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Header } from './components/Header';
+import { Header, type AppTheme } from './components/Header';
 import { SkinGallery } from './components/SkinGallery';
 import { Customizer } from './components/Customizer';
-import { Skin, SkinConfig, WorkBuddyStatus } from './types/skin';
+import { UpdateModal } from './components/UpdateModal';
+import { Skin, SkinConfig, WorkBuddyStatus, UpdateInfo } from './types/skin';
 import {
   apiGetWorkBuddyStatus,
   apiLaunchWorkBuddy,
@@ -14,17 +15,44 @@ import {
   apiGetActiveSkinId,
   apiSaveCustomSkin,
   apiDeleteCustomSkin,
+  apiCheckUpdate,
 } from './utils/ipc';
 import { CheckCircle2, AlertCircle, Info, Layers } from 'lucide-react';
 
 export const App: React.FC = () => {
+  const [appTheme, setAppTheme] = useState<AppTheme>(() => {
+    return (localStorage.getItem('wb-app-theme') as AppTheme) || 'system';
+  });
   const [status, setStatus] = useState<WorkBuddyStatus | null>(null);
   const [skins, setSkins] = useState<Skin[]>([]);
   const [activeSkinId, setActiveSkinId] = useState<string | null>(null);
   const [customizingSkin, setCustomizingSkin] = useState<Skin | null>(null);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+  // 监听并应用软件自身深浅色主题
+  useEffect(() => {
+    localStorage.setItem('wb-app-theme', appTheme);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const updateTheme = () => {
+      const isDark = appTheme === 'dark' || (appTheme === 'system' && mediaQuery.matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    updateTheme();
+    mediaQuery.addEventListener('change', updateTheme);
+    return () => mediaQuery.removeEventListener('change', updateTheme);
+  }, [appTheme]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ type, message });
@@ -49,6 +77,28 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  const checkUpdates = useCallback(async (isManual = false) => {
+    try {
+      if (isManual) {
+        showToast('正在检查 GitHub 最新版本更新...', 'info');
+      }
+      const info = await apiCheckUpdate();
+      setUpdateInfo(info);
+      if (info.has_update) {
+        setIsUpdateModalOpen(true);
+        if (isManual) {
+          showToast(`发现新版本 ${info.latest_version} 可用！`, 'success');
+        }
+      } else if (isManual) {
+        showToast(`当前已是最新版本 (v${info.current_version})`, 'success');
+      }
+    } catch (e) {
+      if (isManual) {
+        showToast(`检查更新失败: ${e}`, 'error');
+      }
+    }
+  }, []);
+
   useEffect(() => {
     refreshStatus();
     refreshSkins();
@@ -58,9 +108,14 @@ export const App: React.FC = () => {
       })
       .catch(() => {});
 
+    // 启动后 3 秒静默检查一次 GitHub 更新
+    const updateTimer = setTimeout(() => checkUpdates(false), 3000);
     const timer = setInterval(refreshStatus, 3000);
-    return () => clearInterval(timer);
-  }, [refreshStatus, refreshSkins]);
+    return () => {
+      clearTimeout(updateTimer);
+      clearInterval(timer);
+    };
+  }, [refreshStatus, refreshSkins, checkUpdates]);
 
   const wasCdpConnected = React.useRef(false);
   useEffect(() => {
@@ -145,12 +200,12 @@ export const App: React.FC = () => {
   };
 
   const handleCreateNew = () => {
-    const templateSkin = skins.find((s) => s.manifest.id === 'builtin-frosted-glass') || skins[0];
+    const templateSkin = skins.find((s) => s.manifest.id === 'jingtian-starlight') || skins[0];
     setCustomizingSkin(templateSkin);
     setIsCustomizerOpen(true);
   };
 
-  const handleApplyCustom = async (css: string, themeMode: 'dark' | 'light') => {
+  const handleApplyCustom = async (css: string, themeMode: 'dark' | 'light' | 'auto') => {
     setLoading(true);
     try {
       await apiApplyRawCss(css, themeMode);
@@ -163,6 +218,7 @@ export const App: React.FC = () => {
   };
 
   const handleSaveCustom = async (
+    skinId: string | null,
     name: string,
     desc: string,
     mode: string,
@@ -172,12 +228,15 @@ export const App: React.FC = () => {
   ) => {
     setLoading(true);
     try {
-      const created = await apiSaveCustomSkin(name, desc, mode, accent, css, config);
+      const saved = await apiSaveCustomSkin(skinId, name, desc, mode, accent, css, config);
       await refreshSkins();
       try {
-        await apiApplySkin(created.manifest.id);
-        setActiveSkinId(created.manifest.id);
-        showToast(`皮肤「${name}」已成功保存并应用`, 'success');
+        await apiApplySkin(saved.manifest.id);
+        setActiveSkinId(saved.manifest.id);
+        showToast(
+          skinId ? `皮肤「${name}」已成功更新并应用` : `皮肤「${name}」已成功创建并应用`,
+          'success'
+        );
       } catch (applyErr) {
         showToast(`皮肤已保存，但应用失败：${applyErr}`, 'error');
       }
@@ -206,25 +265,29 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex flex-col dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 selection:bg-indigo-500 selection:text-white transition-colors">
       <Header
         status={status}
         onLaunch={handleLaunch}
         onClose={handleClose}
         onReset={handleReset}
         loading={loading}
+        appTheme={appTheme}
+        onAppThemeChange={setAppTheme}
+        onCheckUpdate={() => checkUpdates(true)}
+        hasUpdate={Boolean(updateInfo?.has_update)}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto p-6 space-y-6">
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-slate-900/60 border border-indigo-500/20 flex items-start gap-3.5 backdrop-blur-md">
-          <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
+        <div className="p-4 rounded-2xl dark:bg-gradient-to-r dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-slate-900/60 dark:border-indigo-500/20 bg-gradient-to-r from-indigo-50/80 via-purple-50/60 to-white/90 border border-indigo-200/70 flex items-start gap-3.5 backdrop-blur-md shadow-sm">
+          <div className="p-2 rounded-xl dark:bg-indigo-500/10 dark:text-indigo-400 bg-indigo-500/10 text-indigo-600 dark:border-indigo-500/20 border-indigo-500/20 shrink-0">
             <Layers className="w-5 h-5" />
           </div>
           <div className="text-xs space-y-1">
-            <div className="font-semibold text-slate-200 flex items-center gap-2">
+            <div className="font-semibold dark:text-slate-200 text-slate-800 flex items-center gap-2">
               如何使用 WorkBuddy 皮肤换肤？
             </div>
-            <p className="text-slate-400 leading-relaxed">
+            <p className="dark:text-slate-400 text-slate-600 leading-relaxed">
               1. 点击右上角「<strong>启动 WorkBuddy</strong>」，管理器将以安全调试端口模式启动客户端；<br />
               2. 在下方画廊中挑选心仪的主题，点击「<strong>一键应用</strong>」，样式将实时注入 WorkBuddy，无需重启；<br />
               3. 支持点击卡片右下角的调节图标进行<strong>二次微调与强调色定制</strong>，随时点击「安全还原原生」一键恢复。
@@ -243,8 +306,8 @@ export const App: React.FC = () => {
         />
       </main>
 
-      <footer className="py-4 text-center text-[11px] text-slate-500 border-t border-slate-900 bg-slate-950/80">
-        WorkBuddy Skin Manager · 基于 Tauri v2 与 CDP 协议构建 · 零文件修改
+      <footer className="py-3 text-center text-[11px] dark:text-slate-500 text-slate-400 border-t dark:border-slate-900 border-slate-200 dark:bg-slate-950/80 bg-white/80 transition-colors">
+        WorkBuddy Skin Manager
       </footer>
 
       <Customizer
@@ -256,20 +319,26 @@ export const App: React.FC = () => {
         loading={loading}
       />
 
+      <UpdateModal
+        updateInfo={updateInfo}
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
+
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-3 duration-200">
           <div
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-medium border backdrop-blur-xl ${
               toast.type === 'success'
-                ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/30 shadow-emerald-500/10'
+                ? 'dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-500/30 bg-emerald-50 text-emerald-900 border-emerald-300 shadow-emerald-500/10'
                 : toast.type === 'error'
-                ? 'bg-rose-950/90 text-rose-200 border-rose-500/30 shadow-rose-500/10'
-                : 'bg-slate-900/90 text-slate-200 border-slate-700 shadow-black/40'
+                ? 'dark:bg-rose-950/90 dark:text-rose-200 dark:border-rose-500/30 bg-rose-50 text-rose-900 border-rose-300 shadow-rose-500/10'
+                : 'dark:bg-slate-900/90 dark:text-slate-200 dark:border-slate-700 bg-white text-slate-800 border-slate-200 shadow-slate-300/40'
             }`}
           >
-            {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-            {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-            {toast.type === 'info' && <Info className="w-4 h-4 text-indigo-400 shrink-0" />}
+            {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+            {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />}
+            {toast.type === 'info' && <Info className="w-4 h-4 text-indigo-500 shrink-0" />}
             <span>{toast.message}</span>
           </div>
         </div>

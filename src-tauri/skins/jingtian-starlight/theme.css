@@ -78,7 +78,9 @@ html[data-wb-skin="jingtian-starlight"] img[src*="sleepy-cat"] {
   display: none !important;
 }
 
-/* —— Home: kill the 220px void, sit content next to the portrait —— */
+/* —— Home: full-bleed next to the portrait, but keep native playbook reserve.
+   --wb-home-slot-reserve is the padding that keeps .wb-input-footer
+   (选择工作空间 / 默认权限) from sitting on .wb-related-playbooks__header. —— */
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .chat-container--welcome,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .main-content--welcome,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] [class*="_cbChat"],
@@ -97,20 +99,31 @@ html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] [class*="_hasMaxCo
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .wb-home-page {
   max-width: none !important;
   width: 100% !important;
-  min-height: 0 !important;
   height: 100% !important;
   align-items: stretch !important;
   padding: 8px 20px 16px !important;
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
 }
 
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .wb-home-page__main-content {
   justify-content: center !important;
-  align-items: flex-start !important;
-  padding: 20px min(36vw, 340px) 20px 12px !important;
+  align-items: stretch !important;
+  padding-top: 20px !important;
+  padding-right: 12px !important;
+  padding-bottom: var(--wb-home-slot-reserve, 220px) !important;
+  padding-left: 12px !important;
   gap: 16px !important;
-  height: auto !important;
   flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+html[data-wb-skin="jingtian-starlight"] .wb-home-page-header-pc,
+html[data-wb-skin="jingtian-starlight"] .wb-home-header {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
 }
 
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .wb-home-header {
@@ -121,14 +134,16 @@ html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .wb-home-header {
 
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .wb-home-header__title {
   color: var(--wb-text) !important;
-  font-weight: 650 !important;
-  letter-spacing: -0.03em !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  font-synthesis: none !important;
+  -webkit-text-stroke: 0 !important;
+  text-shadow: none !important;
 }
 
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="home"] .wb-home-page__related-playbooks-slot {
-  bottom: 16px !important;
   padding: 0 20px !important;
-  max-width: calc(100% - min(36vw, 340px)) !important;
+  max-width: none !important;
 }
 
 /* Scene tabs + chips: same glass language */
@@ -205,7 +220,7 @@ html[data-wb-skin="jingtian-starlight"] .wb-home-composer {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   width: 100% !important;
-  max-width: 680px !important;
+  max-width: none !important;
   gap: 10px !important;
 }
 
@@ -240,22 +255,19 @@ html[data-wb-skin="jingtian-starlight"] .wb-home-composer [class*="Placeholder"]
   color: var(--wb-text-muted) !important;
 }
 
-/* Sidebar: one frosted column. Nested bars must not become extra cards. */
-html[data-wb-skin="jingtian-starlight"] .conversation-sidebar,
-html[data-wb-skin="jingtian-starlight"] .conversation-list-header,
-html[data-wb-skin="jingtian-starlight"] .conversation-list-content {
-  background-color: color-mix(in srgb, #ffffff 42%, transparent) !important;
+/* Sidebar: one column. Header, list and footer must not paint extra bars. */
+html[data-wb-skin="jingtian-starlight"] .conversation-sidebar {
+  background-color: color-mix(in srgb, #ffffff 28%, transparent) !important;
   color: var(--wb-text) !important;
-  border-color: transparent !important;
+  border-right: 0 !important;
   box-shadow: none !important;
 }
 
-html[data-wb-skin="jingtian-starlight"] .conversation-sidebar {
-  border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
-}
-
+html[data-wb-skin="jingtian-starlight"] .conversation-list-header,
+html[data-wb-skin="jingtian-starlight"] .conversation-list-content,
 html[data-wb-skin="jingtian-starlight"] .user-menu-trigger-wrapper,
-html[data-wb-skin="jingtian-starlight"] .user-menu-trigger {
+html[data-wb-skin="jingtian-starlight"] .user-menu-trigger,
+html[data-wb-skin="jingtian-starlight"] .user-menu-trigger-wrapper * {
   background: transparent !important;
   background-image: none !important;
   border: 0 !important;
@@ -264,17 +276,13 @@ html[data-wb-skin="jingtian-starlight"] .user-menu-trigger {
   -webkit-backdrop-filter: none !important;
 }
 
-html[data-wb-skin="jingtian-starlight"] .user-menu-trigger-wrapper {
-  border-top: 1px solid rgba(112, 70, 232, 0.1) !important;
-}
-
 /* Native dark leftovers that do not follow html.light */
 html[data-wb-skin="jingtian-starlight"] .workbuddy-topbar {
-  background: color-mix(in srgb, #ffffff 52%, transparent) !important;
+  background: transparent !important;
   color: var(--wb-text) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35) !important;
-  backdrop-filter: blur(16px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-bottom: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
 }
 
@@ -286,7 +294,7 @@ html[data-wb-skin="jingtian-starlight"] .workbuddy-topbar * {
 
 html[data-wb-skin="jingtian-starlight"] .conversation-section-label,
 html[data-wb-skin="jingtian-starlight"] .collapsible-section-header {
-  background: color-mix(in srgb, #ffffff 55%, transparent) !important;
+  background: transparent !important;
   color: var(--wb-text) !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -376,20 +384,25 @@ html[data-wb-skin="jingtian-starlight"] .conversation-agent-card {
   color: var(--wb-text) !important;
 }
 
+html[data-wb-skin="jingtian-starlight"] .conversation-sidebar button,
+html[data-wb-skin="jingtian-starlight"] .conversation-list-header button,
 html[data-wb-skin="jingtian-starlight"] .conversation-list-tab-button,
 html[data-wb-skin="jingtian-starlight"] .conversation-list-tab-button-box,
-html[data-wb-skin="jingtian-starlight"] .wb-button:not(.wb-button--ghost) {
-  background: var(--wb-chip) !important;
+html[data-wb-skin="jingtian-starlight"] .conversation-sidebar .wb-button:not(.wb-button--ghost) {
+  background: transparent !important;
   color: var(--wb-text) !important;
-  border: 1px solid var(--wb-border) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 html[data-wb-skin="jingtian-starlight"] .conversation-list-tab-button.active,
 html[data-wb-skin="jingtian-starlight"] .conversation-list-tab-button-box.active {
-  background: color-mix(in srgb, var(--wb-accent) 16%, var(--wb-chip)) !important;
+  background: color-mix(in srgb, var(--wb-accent) 12%, transparent) !important;
   color: var(--wb-accent) !important;
-  border-color: color-mix(in srgb, var(--wb-accent) 32%, transparent) !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 html[data-wb-skin="jingtian-starlight"] .conversation-agent-card:hover,
@@ -429,22 +442,17 @@ html[data-wb-skin="jingtian-starlight"] .daily-checkin > * {
   -webkit-backdrop-filter: none !important;
 }
 
-/* Chat: one room. Wallpaper + portrait behind, text on a fade, no white slab. */
+/* Chat: wallpaper + portrait stay behind #root. Do not shrink the native layout. */
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .main-content--chat,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .conversation-page-chrome,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .conversation-shell,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .conversation-shell__main,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .cr-message-list,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .cr-message-list-viewport {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.58) 0%,
-    rgba(255, 255, 255, 0.34) 48%,
-    rgba(255, 255, 255, 0.08) 72%,
-    rgba(255, 255, 255, 0) 88%
-  ) !important;
-  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
   padding-right: 0 !important;
+  max-width: none !important;
 }
 
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .chat-container,
@@ -465,9 +473,10 @@ html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] [class*="chatMessa
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] [class*="input-area-container"],
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .cr-message-list__content,
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] .conversation-input-area {
-  max-width: min(640px, calc(100% - min(34vw, 380px))) !important;
-  margin-left: 28px !important;
-  margin-right: auto !important;
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 html[data-wb-skin="jingtian-starlight"][data-wb-scene="chat"] table,
@@ -532,20 +541,23 @@ html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"],
   );
 }
 
-html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-sidebar,
-html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-list-header,
-html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-list-content {
-  background-color: color-mix(in srgb, #161232 70%, transparent) !important;
+html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-sidebar {
+  background-color: color-mix(in srgb, #161232 52%, transparent) !important;
   color: #f4f1ff !important;
+  border-right: 0 !important;
 }
 
-html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-sidebar {
-  border-right: 1px solid rgba(196, 178, 255, 0.14) !important;
+html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-list-header,
+html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-list-content,
+html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .user-menu-trigger-wrapper,
+html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .user-menu-trigger {
+  background: transparent !important;
+  border: 0 !important;
 }
 
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .workbuddy-topbar {
-  background: color-mix(in srgb, #1a1638 72%, transparent) !important;
-  border-bottom: 1px solid rgba(196, 178, 255, 0.12) !important;
+  background: transparent !important;
+  border-bottom: 0 !important;
 }
 
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .workbuddy-topbar,
@@ -556,7 +568,7 @@ html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"],
 
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-section-label,
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .collapsible-section-header {
-  background: color-mix(in srgb, #2a2558 70%, transparent) !important;
+  background: transparent !important;
   color: #f4f1ff !important;
 }
 
@@ -581,24 +593,20 @@ html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"],
   background: color-mix(in srgb, #241e52 82%, transparent) !important;
 }
 
+html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-sidebar button,
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-list-tab-button,
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-list-tab-button-box,
-html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .wb-button:not(.wb-button--ghost) {
-  background: color-mix(in srgb, #2a2558 70%, transparent) !important;
+html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .conversation-sidebar .wb-button:not(.wb-button--ghost) {
+  background: transparent !important;
   color: #f4f1ff !important;
-  border: 1px solid rgba(196, 178, 255, 0.16) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .main-content--chat,
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"])[data-wb-scene="chat"] .main-content--chat {
-  background: linear-gradient(
-    90deg,
-    rgba(16, 14, 42, 0.78) 0%,
-    rgba(18, 16, 48, 0.48) 48%,
-    rgba(18, 16, 48, 0.14) 74%,
-    rgba(18, 16, 48, 0) 90%
-  ) !important;
+  background: transparent !important;
+  background-image: none !important;
 }
 
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .main-content--chat,
@@ -646,7 +654,7 @@ html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"],
 }
 
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"]) .user-menu-trigger-wrapper {
-  border-top-color: rgba(196, 178, 255, 0.12) !important;
+  border: 0 !important;
 }
 
 html[data-wb-skin="jingtian-starlight"]:is(.dark, .cb-dark, [data-theme="dark"], [data-wb-native-theme="dark"])[data-wb-scene="chat"] [class*="userMessageBubble"],
